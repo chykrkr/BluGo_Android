@@ -437,6 +437,12 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
 	    return this.device;
 	}
     }
+
+    public void test_button(View view)
+    {
+	Intent intent = new Intent(this, GoBoardActivity.class);
+	startActivity(intent);
+    }
 }
 
 

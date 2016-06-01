@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="0dp"
+    android:paddingRight="0dp"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.example.user.blugo.GoBoardActivity"
+    android:background="#000000"
+    android:weightSum="1">
+
+    <com.example.user.blugo.GoBoardView
+        android:layout_width="match_parent"
+        android:layout_height="270dp"
+        android:id="@+id/go_board_view"
+        app:exampleDrawable="@drawable/board"
+        app:exampleString="Hello, GoBoardView"
+        android:layout_weight="0.87"/>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="73dp"
+        >
+
+        <NumberPicker
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/numberPicker"
+            android:background="#ffffff"/>
+
+        <Space
+            android:layout_width="5dp"
+            android:layout_height="match_parent"
+            />
+
+        <NumberPicker
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/numberPicker2"
+            android:background="#ffffff"/>
+
+        <NumberPicker
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/num_color"
+            android:background="#1fd9ee"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Button"
+            android:id="@+id/button3"
+            android:onClick="aaaa"/>
+
+    </LinearLayout>
+
+</LinearLayout>
