@@ -8,6 +8,7 @@ import android.widget.NumberPicker;
 public class GoBoardActivity extends AppCompatActivity {
     private NumberPicker np1, np2, np_color;
     private GoBoardView gv;
+    private GoControlSingle single_game = new GoControlSingle();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -20,21 +21,14 @@ public class GoBoardActivity extends AppCompatActivity {
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
 
-        np1.setMinValue(1);
-        np2.setMinValue(1);
-        np_color.setMinValue(GoBoardView.EMPTY);
-
-        np1.setMaxValue(gv.getBoardSize());
-        np2.setMaxValue(gv.getBoardSize());
-        np_color.setMaxValue(GoBoardView.WHITE_STONE);
+        gv.setGo_control(single_game);
 
         gv.setFocusable(true);
     }
 
     public void aaaa(View view)
     {
-        gv.setCurrent_turn(np_color.getValue());
-
-        gv.invalidate();
+        /* board clear */
+        single_game.new_game();
     }
 }

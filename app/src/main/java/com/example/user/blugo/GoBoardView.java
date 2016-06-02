@@ -20,10 +20,12 @@ import android.view.View;
 
 import java.util.ArrayList;
 
+import com.example.user.blugo.GoControl;
+
 /**
  * TODO: document your custom view class.
  */
-public class GoBoardView extends View  {
+public class GoBoardView extends View implements GoControl.Callback {
     private String mExampleString; // TODO: use a default from R.string...
     private int mExampleColor = Color.RED; // TODO: use a default from R.color...
     private float mExampleDimension = 0; // TODO: use a default from R.dimen...
@@ -33,47 +35,25 @@ public class GoBoardView extends View  {
     private float mTextWidth;
     private float mTextHeight;
 
-    private int mBoardSize = 19;
-
-    public final static int EMPTY = 0;
-    public final static int BLACK_STONE = 1;
-    public final static int WHITE_STONE = 2;
     private final static int OPAQUE_ALPHA = 255;
     private final static int GHOST_ALPHA = 50;
 
-    private ArrayList<BoardPos> stone_pos = new ArrayList<BoardPos>();
 
-    private int current_turn = BLACK_STONE;
     private Point ghost_pos = new Point(-1, -1);
 
     private int board_canvas_x = -1, board_canvas_y = -1;
     private int board_canvas_w = -1, board_canvas_h = -1;
     private float board_square_size = -1;
 
-    private class BoardPos {
-        public int x, y;
-        public int state = EMPTY;
+    private GoControl go_control = null;
 
-        public BoardPos(Point pos, int state) {
-            x = pos.x;
-            y = pos.y;
-            this.state = state;
-        }
+    public GoControl getGo_control() {
+        return go_control;
+    }
 
-        public BoardPos(int x, int y, int state) {
-            this.x = x;
-            this.y = y;
-            this.state = state;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            BoardPos p = (BoardPos) o;
-            if (p.x == x && p.y == y)
-                return true;
-
-            return false;
-        }
+    public void setGo_control(GoControl go_control) {
+        this.go_control = go_control;
+        go_control.setCallback_receiver(this);
     }
 
     public GoBoardView(Context context) {
@@ -98,7 +78,10 @@ public class GoBoardView extends View  {
         int found_x = -1, found_y = -1;
         float pos_x, pos_y;
         float tol = board_square_size * 0.9f;
+        int board_size;
 
+        if (go_control == null)
+            return p;
 
         if (x < board_canvas_x || x > (board_canvas_x + board_canvas_w))
             return p;
@@ -106,8 +89,10 @@ public class GoBoardView extends View  {
         if (y < board_canvas_y || y > (board_canvas_y + board_canvas_h))
             return p;
 
-        for (i = 0 ; i < mBoardSize ; i++) {
-            pos_x = board_canvas_x + board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(mBoardSize - 1);
+        board_size = go_control.getBoardSize();
+
+        for (i = 0 ; i < board_size ; i++) {
+            pos_x = board_canvas_x + board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(board_size - 1);
 
             if ( x > pos_x - tol && x <= pos_x + tol) {
                 found_x = i;
@@ -118,8 +103,8 @@ public class GoBoardView extends View  {
         if (found_x == -1)
             return p;
 
-        for (j = 0 ; j < mBoardSize ; j++) {
-            pos_y = board_canvas_y + board_square_size/2.0f + j * (board_canvas_h -  board_square_size)/(mBoardSize - 1);
+        for (j = 0 ; j < board_size ; j++) {
+            pos_y = board_canvas_y + board_square_size/2.0f + j * (board_canvas_h -  board_square_size)/(board_size - 1);
 
             if (y > pos_y - tol && y <= pos_y + tol) {
                 found_y = j;
@@ -140,6 +125,14 @@ public class GoBoardView extends View  {
     public boolean onTouchEvent(MotionEvent event) {
         Point p;
 
+        if (go_control == null)
+            return true;
+
+        if (!go_control.isMyTurn()) {
+            ghost_pos.x = ghost_pos.y = -1;
+            return true;
+        }
+
         Log.d("TOUCHEVT", event.toString());
 
         switch (event.getAction())
@@ -150,14 +143,11 @@ public class GoBoardView extends View  {
                 if (!ghost_pos.equals(p)) {
                     ghost_pos.x = p.x;
                     ghost_pos.y = p.y;
+                    this.invalidate();
                 } else {
-                    /* Cancel putting stone if current position isn't empty.*/
-                    if (stone_pos.contains(new BoardPos(ghost_pos, EMPTY)))
-                        break;
-                    this.putStoneAt(p.x, p.y, current_turn);
+                    /* If putStoneAt is successful then this view is updated automatically */
+                    go_control.putStoneAt(p.x, p.y);
                 }
-
-                this.invalidate();
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -240,12 +230,6 @@ public class GoBoardView extends View  {
 
         Log.d("DIM", getWidth() + "x" + getHeight());
 
-        // Draw the text.
-        canvas.drawText(mExampleString,
-            paddingLeft + (contentWidth - mTextWidth) / 2,
-            paddingTop + (contentHeight + mTextHeight) / 2,
-            mTextPaint);
-
         if (contentWidth > contentHeight) {
             board_canvas_h = board_canvas_w = contentHeight;
             board_canvas_x = paddingLeft + (contentWidth - contentHeight) / 2;
@@ -262,17 +246,22 @@ public class GoBoardView extends View  {
             mExampleDrawable.draw(canvas);
         }
 
-        board_square_size = board_canvas_w / mBoardSize;
+        if (go_control == null)
+            return;
+
+        int board_size = go_control.getBoardSize();
+
+        board_square_size = board_canvas_w / board_size;
         path = new Path();
 
-        for (i = 0 ; i < mBoardSize; i++) {
-            tmp = board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(mBoardSize - 1);
+        for (i = 0 ; i < board_size; i++) {
+            tmp = board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(board_size - 1);
             path.moveTo(tmp, board_square_size/2.0f);
             path.lineTo(tmp, board_canvas_h - board_square_size/2);
         }
 
-        for (i = 0 ; i < mBoardSize; i++) {
-            tmp = board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(mBoardSize - 1);
+        for (i = 0 ; i < board_size; i++) {
+            tmp = board_square_size/2.0f + i * (board_canvas_w -  board_square_size)/(board_size - 1);
             path.moveTo(board_square_size/2.0f, tmp);
             path.lineTo(board_canvas_w - board_square_size/2, tmp);
         }
@@ -286,7 +275,7 @@ public class GoBoardView extends View  {
         boardline.draw(canvas);
 
         /* draw flower point */
-        if (mBoardSize >= 19) {
+        if (board_size >= 19) {
 
             flower_point = new ShapeDrawable(new OvalShape());
             flower_point.getPaint().setColor(0xff000000);
@@ -305,22 +294,24 @@ public class GoBoardView extends View  {
             }
         }
 
+        ArrayList<GoControl.BoardPos> stone_pos = go_control.getStone_pos();
+
         for ( i = 0 ; i < stone_pos.size() ; i++) {
-            BoardPos p = stone_pos.get(i);
+            GoControl.BoardPos p = stone_pos.get(i);
 
             draw_stone(canvas, p.state, board_canvas_x, board_canvas_y, p.x, p.y, board_canvas_w, board_canvas_h, (int) board_square_size, OPAQUE_ALPHA);
         }
 
         boolean draw_ghost;
 
-        draw_ghost = current_turn == BLACK_STONE || current_turn == WHITE_STONE;
-        draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < mBoardSize);
-        draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < mBoardSize);
-        draw_ghost = draw_ghost && !stone_pos.contains(new BoardPos(ghost_pos.x, ghost_pos.y, EMPTY));
+        draw_ghost = go_control.getCurrent_turn() == GoControl.BoardPos.BLACK_STONE || go_control.getCurrent_turn() == GoControl.BoardPos.WHITE_STONE;
+        draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < board_size);
+        draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < board_size);
+        draw_ghost = draw_ghost && !stone_pos.contains(new GoControl.BoardPos(ghost_pos.x, ghost_pos.y));
 
         /* draw ghost */
         if (draw_ghost) {
-            draw_stone(canvas, current_turn, board_canvas_x, board_canvas_y, ghost_pos.x, ghost_pos.y, board_canvas_w, board_canvas_h, (int) board_square_size, GHOST_ALPHA);
+            draw_stone(canvas, go_control.getCurrent_turn(), board_canvas_x, board_canvas_y, ghost_pos.x, ghost_pos.y, board_canvas_w, board_canvas_h, (int) board_square_size, GHOST_ALPHA);
         }
         /*
         draw_stone(canvas, 0, x, y, 2, 2, width, height, (int) square);
@@ -335,18 +326,24 @@ public class GoBoardView extends View  {
                              int width, int height, int square, int alpha)
     {
         int tmpx, tmpy, tmpw, tmph;
-        Resources res = getContext().getResources();
+        int board_size;
         Drawable image;
 
-        if (stone_color == BLACK_STONE)
+        if (go_control == null)
+            return;
+
+        Resources res = getContext().getResources();
+        board_size = go_control.getBoardSize();
+
+        if (stone_color == GoControl.BoardPos.BLACK_STONE)
             image = res.getDrawable(R.drawable.go_b_no_bg);
         else
             image = res.getDrawable(R.drawable.go_w_no_bg);
 
         tmph = tmpw = (square - square / 11) / 2;
 
-        tmpx = x + square/2 + i * (width -  square)/(mBoardSize - 1);
-        tmpy = y + square/2 + j * (height -  square)/(mBoardSize - 1);
+        tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
+        tmpy = y + square/2 + j * (height -  square)/(board_size - 1);
 
         image.setBounds(tmpx - tmpw, tmpy - tmph, tmpx + tmpw, tmpy + tmph);
         image.setAlpha(alpha);
@@ -357,11 +354,17 @@ public class GoBoardView extends View  {
                              int width, int height, int square)
     {
         int tmpx, tmpy, tmpw, tmph;
+        int board_size;
+
+        if (go_control == null)
+            return;
+
+        board_size = go_control.getBoardSize();
 
         tmph = tmpw = square/7;
 
-        tmpx = x + square/2 + i * (width -  square)/(mBoardSize - 1);
-        tmpy = y + square/2 + j * (height -  square)/(mBoardSize - 1);
+        tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
+        tmpy = y + square/2 + j * (height -  square)/(board_size - 1);
         s.setBounds(tmpx - tmpw, tmpy - tmph, tmpx + tmpw, tmpy + tmph);
         s.draw(canvas);
     }
@@ -406,14 +409,6 @@ public class GoBoardView extends View  {
         invalidateTextPaintAndMeasurements();
     }
 
-    public int getBoardSize() {
-        return mBoardSize;
-    }
-
-    public void setBoardSize(int boardSize) {
-        mBoardSize = boardSize;
-    }
-
     /**
      * Gets the example dimension attribute value.
      *
@@ -453,26 +448,8 @@ public class GoBoardView extends View  {
         mExampleDrawable = exampleDrawable;
     }
 
-    public void putStoneAt(int x, int y, int state)
-    {
-        BoardPos pos = new BoardPos(x, y, state);
-
-        if (stone_pos.contains(pos)) {
-            stone_pos.remove(pos);
-        }
-
-        if (state != GoBoardView.EMPTY) {
-            stone_pos.add(pos);
-        }
-    }
-
-    public void setCurrent_turn(int turn)
-    {
-        current_turn = turn;
-    }
-
-    public int getCurrent_turn()
-    {
-        return current_turn;
+    @Override
+    public void callback_board_state_changed() {
+        this.invalidate();
     }
 }
