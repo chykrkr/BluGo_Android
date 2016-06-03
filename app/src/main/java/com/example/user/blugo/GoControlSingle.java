@@ -7,18 +7,19 @@ import java.util.ArrayList;
  */
 public class GoControlSingle extends GoControl {
     private int board_size = 19;
-    private int current_turn = BoardPos.BLACK_STONE;
+    private Player current_turn = Player.BLACK;
     private GoRule rule;
+    private float komi = 6.5f;
 
     GoControlSingle() {
-        this(19, BoardPos.BLACK_STONE, null, new GoRuleJapan());
+        this(19, Player.BLACK, null, new GoRuleJapan());
     }
 
     GoControlSingle(Callback callback_receiver) {
-        this(19, BoardPos.BLACK_STONE, callback_receiver, new GoRuleJapan());
+        this(19, Player.BLACK, callback_receiver, new GoRuleJapan());
     }
 
-    GoControlSingle(int board_size, int current_turn, Callback callback_receiver, GoRule rule) {
+    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule) {
         this.board_size = board_size;
         this.current_turn = current_turn;
         this.callback_receiver = callback_receiver;
@@ -31,7 +32,7 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
-    public synchronized ArrayList<BoardPos> getStone_pos() {
+    public synchronized ArrayList<GoAction> getStone_pos() {
         return rule.get_stones();
     }
 
@@ -41,17 +42,18 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
-    public synchronized int getCurrent_turn() {
+    public synchronized Player getCurrent_turn() {
         return current_turn;
     }
 
     @Override
-    public synchronized boolean putStoneAt(int x, int y) {
+    public synchronized boolean putStoneAt(int x, int y, boolean pass) {
+        Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
         /* put stone according to specified RULE */
-        if (rule.putStoneAt(x, y, current_turn, board_size) == false)
+        if (rule.putStoneAt(x, y, current_turn, next_turn, board_size) == false)
             return false;
 
-        toggle_turn();
+	current_turn = next_turn;
 
         if (callback_receiver != null)
             callback_receiver.callback_board_state_changed();
@@ -60,15 +62,58 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
+    public String get_sgf() {
+        ArrayList<GoAction> actions = rule.get_action_history();
+        int i;
+
+        String sgf_string = "(;GM[1]FF[4]CA[UTF-8]\n";
+        sgf_string += String.format("SZ[%d]HA[0]KM[%.1f]\n\n", board_size, komi);
+
+        for (i = 0 ; i < actions.size() ; i++) {
+            sgf_string += actions.get(i).get_sgf_string() + "\n";
+        }
+        sgf_string += "\n)";
+
+        return sgf_string;
+    }
+
+    @Override
+    public synchronized void pass() {
+        Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
+
+        current_turn = next_turn;
+        rule.pass(next_turn);
+
+        if (callback_receiver != null)
+            callback_receiver.callback_board_state_changed();
+    }
+
+    @Override
+    public synchronized void undo()
+    {
+	ArrayList<GoRule.BoardState> timeline;
+	GoRule.BoardState state;
+
+	if (!this.rule.undo()) {
+	    return;
+	}
+
+	timeline = rule.getTimeline();
+	state = timeline.get(timeline.size() - 1);
+	current_turn = state.next_turn;
+
+	this.callback_receiver.callback_board_state_changed();
+    }
+
+    @Override
     public synchronized void new_game() {
-        this.current_turn = BoardPos.BLACK_STONE;
+        this.current_turn = Player.BLACK;
         this.rule = null;
         this.rule = new GoRuleJapan();
         this.callback_receiver.callback_board_state_changed();
     }
 
-    private void toggle_turn()
-    {
-        current_turn = (current_turn == BoardPos.BLACK_STONE)? BoardPos.WHITE_STONE : BoardPos.BLACK_STONE;
+    public synchronized void load_game(String sgf_string) {
+        this.callback_receiver.callback_board_state_changed();
     }
 }

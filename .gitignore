@@ -6,3 +6,7 @@
 .DS_Store
 /build
 /captures
+cscope*
+GPATH
+GRTAGS
+GTAGS

@@ -28,35 +28,33 @@
         android:layout_height="73dp"
         >
 
-        <NumberPicker
+        <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/numberPicker"
-            android:background="#ffffff"/>
-
-        <Space
-            android:layout_width="5dp"
-            android:layout_height="match_parent"
-            />
-
-        <NumberPicker
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/numberPicker2"
-            android:background="#ffffff"/>
-
-        <NumberPicker
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/num_color"
-            android:background="#1fd9ee"/>
+            android:text="Undo"
+            android:id="@+id/button3"
+            android:onClick="undo"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New Button"
-            android:id="@+id/button3"
-            android:onClick="aaaa"/>
+            android:text="Pass"
+            android:id="@+id/button6"
+            android:onClick="pass"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save SGF"
+            android:id="@+id/button4"
+	    android:onClick="save_SGF"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Load SGF"
+            android:id="@+id/button5"
+	    android:onClick="load_SGF"/>
 
     </LinearLayout>
 

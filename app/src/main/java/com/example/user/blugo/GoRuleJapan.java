@@ -1,14 +1,17 @@
 package com.example.user.blugo;
 
+import android.graphics.Point;
+
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Objects;
 
 /**
  * Created by user on 2016-06-02.
  */
 public class GoRuleJapan extends GoRule {
     private ArrayList<BoardState> timeline = new ArrayList<>();
+    private ArrayList<GoControl.GoAction> action_history = new ArrayList<>();
+    private int seq_no = 0;
 
     GoRuleJapan()
     {
@@ -18,31 +21,61 @@ public class GoRuleJapan extends GoRule {
     }
 
     @Override
-    public ArrayList<GoControl.BoardPos> get_stones() {
+    public ArrayList<GoControl.GoAction> get_stones() {
         BoardState state = timeline.get(timeline.size() - 1);
         return state.stone_pos;
     }
 
     @Override
-    public boolean putStoneAt(int x, int y, int stone_color, int board_size) {
-        GoControl.BoardPos pos, single_stone;
-        int tmpx, tmpy, dead_count;
+    public ArrayList<GoControl.GoAction> get_action_history() {
+        return action_history;
+    }
+
+    public ArrayList<BoardState> getTimeline()
+    {
+	return timeline;
+    }
+
+    public void pass(GoControl.Player next_turn)
+    {
         BoardState state = null;
 
-        if (stone_color == GoControl.BoardPos.EMPTY) {
-            return false;
-        }
-
+        /* copy time line */
         try {
             BoardState tmp = timeline.get(timeline.size() - 1);
             state = (BoardState) (tmp.clone());
-            state.turn = stone_color;
+            state.next_turn = next_turn;
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
 
-        pos = new GoControl.BoardPos(x, y, stone_color);
-        single_stone = new GoControl.BoardPos(-1, -1);
+        action_history.add(new GoControl.GoAction(
+            (next_turn == GoControl.Player.BLACK)? GoControl.Player.WHITE : GoControl.Player.BLACK,
+            null, GoControl.Action.PASS));
+
+        state.ko_pos = null;
+        seq_no++;
+        timeline.add(state);
+    }
+
+    @Override
+    public boolean putStoneAt(int x, int y, GoControl.Player stone_color, GoControl.Player next_turn, int board_size) {
+        GoControl.GoAction pos;
+        Point single_stone;
+        int dead_count;
+        BoardState state = null;
+
+        try {
+            BoardState tmp = timeline.get(timeline.size() - 1);
+            state = (BoardState) (tmp.clone());
+            state.next_turn = next_turn;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+
+        pos = new GoControl.GoAction(stone_color, x, y);
+
+        single_stone = new Point(-1, -1);
 
         /* Rule 1 : Check if there is a stone already. */
         if (state.stone_pos.contains(pos)) {
@@ -56,8 +89,8 @@ public class GoRuleJapan extends GoRule {
         /* remove opponent dead group */
         dead_count = remove_dead_stones(
             state,
-            (pos.state == GoControl.BoardPos.BLACK_STONE) ?
-                GoControl.BoardPos.WHITE_STONE : GoControl.BoardPos.BLACK_STONE,
+            (pos.player == GoControl.Player.BLACK) ?
+                GoControl.Player.WHITE : GoControl.Player.BLACK,
             board_size,
             single_stone
         );
@@ -70,14 +103,14 @@ public class GoRuleJapan extends GoRule {
         }
         /* If we killed just one stone, mark current stone position as a ko */
         if (dead_count == 1) {
-            state.ko_pos = pos;
+            state.ko_pos = pos.where;
         } else
             state.ko_pos = null;
 
         /* remove my dead group */
         dead_count = remove_dead_stones(
             state,
-            pos.state,
+            pos.player,
             board_size,
             single_stone
         );
@@ -89,22 +122,36 @@ public class GoRuleJapan extends GoRule {
             return false;
         }
 
+        seq_no++;
+        action_history.add(pos);
         timeline.add(state);
 
         return true;
     }
 
-    private void add_stone_to_link(BoardState state, GoControl.BoardPos pos)
+    @Override
+    public boolean undo()
+    {
+	if (timeline.size() <= 1)
+	    return false;
+
+        action_history.remove(action_history.size() - 1);
+
+	timeline.remove(timeline.size() - 1);
+	return true;
+    }
+
+    private void add_stone_to_link(BoardState state, GoControl.GoAction pos)
     {
         int i;
         ArrayList links;
         ArrayList<Object> link_index = new ArrayList<Object>();
-        ArrayList<GoControl.BoardPos> new_link, link;
+        ArrayList<GoControl.GoAction> new_link, link;
 
-        links = (pos.state == GoControl.BoardPos.BLACK_STONE)? state.black_links : state.white_links;
+        links = (pos.player == GoControl.Player.BLACK)? state.black_links : state.white_links;
 
         for (i = 0 ; i < links.size() ; i++) {
-            link = (ArrayList<GoControl.BoardPos>) links.get(i);
+            link = (ArrayList<GoControl.GoAction>) links.get(i);
 
             if (isLinkable(link, pos)) {
                 link_index.add(link);
@@ -113,7 +160,7 @@ public class GoRuleJapan extends GoRule {
 
         /* Make a link */
         if (link_index.size() == 0) {
-            new_link = new ArrayList<GoControl.BoardPos>();
+            new_link = new ArrayList<GoControl.GoAction>();
             new_link.add(pos);
             links.add(new_link);
             return;
@@ -121,16 +168,16 @@ public class GoRuleJapan extends GoRule {
 
         /* Add to a exist link */
         if (link_index.size() == 1) {
-            link = (ArrayList<GoControl.BoardPos>) link_index.get(0);
+            link = (ArrayList<GoControl.GoAction>) link_index.get(0);
             link.add(pos);
             return;
         }
 
         /* Make new merged link */
-        new_link = new ArrayList<GoControl.BoardPos>();
+        new_link = new ArrayList<GoControl.GoAction>();
 
         for (i = 0 ; i < link_index.size() ; i++) {
-            link = (ArrayList<GoControl.BoardPos>) link_index.get(i);
+            link = (ArrayList<GoControl.GoAction>) link_index.get(i);
 
             new_link.addAll(link);
         }
@@ -149,23 +196,23 @@ public class GoRuleJapan extends GoRule {
         links.add(new_link);
     }
 
-    private int remove_dead_stones(BoardState state, int color, int board_size, GoControl.BoardPos single_stone)
+    private int remove_dead_stones(BoardState state, GoControl.Player color, int board_size, Point single_stone)
     {
         int i, j, dead_count = 0;
         ArrayList links;
-        ArrayList<GoControl.BoardPos> link;
+        ArrayList<GoControl.GoAction> link;
 
-        links = (color== GoControl.BoardPos.BLACK_STONE)? state.black_links : state.white_links;
+        links = (color== GoControl.Player.BLACK)? state.black_links : state.white_links;
 
         for (i = 0 ; i < links.size() ; ) {
-            link = (ArrayList<GoControl.BoardPos>)links.get(i);
+            link = (ArrayList<GoControl.GoAction>)links.get(i);
 
             if (check_link_dead(state.stone_pos, link, board_size)) {
                 dead_count += link.size();
 
                 if (dead_count == 1) {
-                    single_stone.x = ((GoControl.BoardPos) link.get(0)).x;
-                    single_stone.y = ((GoControl.BoardPos) link.get(0)).y;
+                    single_stone.x = ((GoControl.GoAction) link.get(0)).where.x;
+                    single_stone.y = ((GoControl.GoAction) link.get(0)).where.y;
                 }
 
                 state.stone_pos.removeAll(link);
@@ -179,91 +226,91 @@ public class GoRuleJapan extends GoRule {
         return dead_count;
     }
 
-    private boolean check_link_dead(ArrayList<GoControl.BoardPos> stone_pos, ArrayList<GoControl.BoardPos> link, int board_size)
+    private boolean check_link_dead(ArrayList<GoControl.GoAction> stone_pos, ArrayList<GoControl.GoAction> link, int board_size)
     {
         int i;
 
         /* To disallow duplication (It makes count easy)*/
-        HashSet<GoControl.BoardPos> life_count = new HashSet<GoControl.BoardPos>();
+        HashSet<GoControl.GoAction> life_count = new HashSet<GoControl.GoAction>();
 
         for (i = 0 ; i < link.size() ; i++) {
-            GoControl.BoardPos pos = link.get(i);
-            GoControl.BoardPos tmp;
+            GoControl.GoAction pos = link.get(i);
+            GoControl.GoAction tmp;
 
             /* left */
-            tmp = new GoControl.BoardPos(pos.x - 1, pos.y);
-            if (tmp.x >= 0 && !stone_pos.contains(tmp)) {
+            tmp = new GoControl.GoAction(pos.where.x - 1, pos.where.y);
+            if (tmp.where.x >= 0 && !stone_pos.contains(tmp)) {
                 life_count.add(tmp);
             }
 
             /* right */
-            tmp = new GoControl.BoardPos(pos.x + 1, pos.y);
-            if (tmp.x < board_size && !stone_pos.contains(tmp))
+            tmp = new GoControl.GoAction(pos.where.x + 1, pos.where.y);
+            if (tmp.where.x < board_size && !stone_pos.contains(tmp))
                 life_count.add(tmp);
 
             /* up */
-            tmp = new GoControl.BoardPos(pos.x, pos.y - 1);
-            if (tmp.y >= 0 && !stone_pos.contains(tmp))
+            tmp = new GoControl.GoAction(pos.where.x, pos.where.y - 1);
+            if (tmp.where.y >= 0 && !stone_pos.contains(tmp))
                 life_count.add(tmp);
 
             /* down */
-            tmp = new GoControl.BoardPos(pos.x, pos.y + 1);
-            if (tmp.y < board_size && !stone_pos.contains(tmp))
+            tmp = new GoControl.GoAction(pos.where.x, pos.where.y + 1);
+            if (tmp.where.y < board_size && !stone_pos.contains(tmp))
                 life_count.add(tmp);
         }
 
         return (life_count.size()) > 0 ? false : true;
     }
 
-    private int calc_stone_life(ArrayList<GoControl.BoardPos> stone_pos, GoControl.BoardPos pos, int board_size)
+    private int calc_stone_life(ArrayList<GoControl.GoAction> stone_pos, GoControl.GoAction pos, int board_size)
     {
-        GoControl.BoardPos tmp;
+        GoControl.GoAction tmp;
         int life_count = 0;
 
         /* left */
-        tmp = new GoControl.BoardPos(pos.x - 1, pos.y);
-        if (tmp.x >= 0 && !stone_pos.contains(tmp)) {
+        tmp = new GoControl.GoAction(pos.where.x - 1, pos.where.y);
+        if (tmp.where.x >= 0 && !stone_pos.contains(tmp)) {
             life_count++;
         }
 
             /* right */
-        tmp = new GoControl.BoardPos(pos.x + 1, pos.y);
-        if (tmp.x < board_size && !stone_pos.contains(tmp))
+        tmp = new GoControl.GoAction(pos.where.x + 1, pos.where.y);
+        if (tmp.where.x < board_size && !stone_pos.contains(tmp))
             life_count++;
 
             /* up */
-        tmp = new GoControl.BoardPos(pos.x, pos.y - 1);
-        if (tmp.y >= 0 && !stone_pos.contains(tmp))
+        tmp = new GoControl.GoAction(pos.where.x, pos.where.y - 1);
+        if (tmp.where.y >= 0 && !stone_pos.contains(tmp))
             life_count++;
 
             /* down */
-        tmp = new GoControl.BoardPos(pos.x, pos.y + 1);
-        if (tmp.y < board_size && !stone_pos.contains(tmp))
+        tmp = new GoControl.GoAction(pos.where.x, pos.where.y + 1);
+        if (tmp.where.y < board_size && !stone_pos.contains(tmp))
             life_count++;
 
         return life_count;
     }
 
-    private boolean isLinkable(ArrayList<GoControl.BoardPos> link, GoControl.BoardPos pos) {
+    private boolean isLinkable(ArrayList<GoControl.GoAction> link, GoControl.GoAction pos) {
         boolean result;
 
         /* up */
-        if (link.contains(new GoControl.BoardPos(pos.x, pos.y - 1))) {
+        if (link.contains(new GoControl.GoAction(pos.where.x, pos.where.y - 1))) {
             return true;
         }
 
         /* down */
-        if (link.contains(new GoControl.BoardPos(pos.x, pos.y + 1))) {
+        if (link.contains(new GoControl.GoAction(pos.where.x, pos.where.y + 1))) {
             return true;
         }
 
         /* left */
-        if (link.contains(new GoControl.BoardPos(pos.x - 1, pos.y))) {
+        if (link.contains(new GoControl.GoAction(pos.where.x - 1, pos.where.y))) {
             return true;
         }
 
         /* right */
-        if (link.contains(new GoControl.BoardPos(pos.x + 1, pos.y))) {
+        if (link.contains(new GoControl.GoAction(pos.where.x + 1, pos.where.y))) {
             return true;
         }
 
