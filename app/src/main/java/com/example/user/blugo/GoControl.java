@@ -3,6 +3,7 @@ package com.example.user.blugo;
 import android.graphics.Point;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Created by user on 2016-06-02.
@@ -25,6 +26,7 @@ public abstract class GoControl {
         public Action action = Action.PUT;
         /* where */
         public Point where = null;
+        public int group_id = 0;
 
         public GoAction(int x, int y) {
             this(Player.BLACK, new Point(x, y), Action.PUT);
@@ -39,9 +41,14 @@ public abstract class GoControl {
         }
 
         public GoAction(Player player, Point where, Action action) {
+            this(player, where, action, 0);
+        }
+
+        public GoAction(Player player, Point where, Action action, int group_id) {
             this.player = player;
             this.where = where;
             this.action = action;
+            this.group_id = group_id;
         }
 
         public String get_sgf_string()
@@ -78,7 +85,7 @@ public abstract class GoControl {
             else
                 p = new Point(where.x, where.y);
 
-            return new GoAction(player, p, action);
+            return new GoAction(player, p, action, group_id);
         }
 
         @Override
@@ -98,6 +105,14 @@ public abstract class GoControl {
         }
 
         @Override
+        public int hashCode() {
+            if (where != null)
+                return where.hashCode();
+
+            return super.hashCode();
+        }
+
+        @Override
         public String toString() {
             return get_sgf_string();
         }
@@ -108,11 +123,12 @@ public abstract class GoControl {
     }
 
     public abstract boolean isMyTurn();
-    public abstract  ArrayList<GoAction> getStone_pos();
+    public abstract HashSet<GoAction> getStone_pos();
     public abstract int getBoardSize();
     public abstract Player getCurrent_turn();
     public abstract boolean putStoneAt(int x, int y, boolean pass);
     public abstract String get_sgf();
+    public abstract boolean load_sgf(String text);
 
     public abstract void pass();
     public abstract void undo();

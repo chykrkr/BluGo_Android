@@ -20,6 +20,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.example.user.blugo.GoControl;
 
@@ -295,11 +296,9 @@ public class GoBoardView extends View implements GoControl.Callback {
             }
         }
 
-        ArrayList<GoControl.GoAction> stone_pos = go_control.getStone_pos();
+        HashSet<GoControl.GoAction> stone_pos = go_control.getStone_pos();
 
-        for ( i = 0 ; i < stone_pos.size() ; i++) {
-            GoControl.GoAction p = stone_pos.get(i);
-
+        for (GoControl.GoAction p : stone_pos) {
             if (p.action != GoControl.Action.PUT || p.where == null)
                 continue;
 

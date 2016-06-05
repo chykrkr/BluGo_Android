@@ -1,6 +1,7 @@
 package com.example.user.blugo;
 
 import android.graphics.Point;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,18 +11,24 @@ import java.util.HashSet;
  */
 public class GoRuleJapan extends GoRule {
     private ArrayList<BoardState> timeline = new ArrayList<>();
+    private ArrayList<NewBoardState> new_timeline = new ArrayList<>();
     private ArrayList<GoControl.GoAction> action_history = new ArrayList<>();
     private int seq_no = 0;
 
     GoRuleJapan()
     {
-        BoardState state = new BoardState();
-
-        timeline.add(state);
+        timeline.add(new BoardState());
+        new_timeline.add(new NewBoardState());
     }
 
     @Override
-    public ArrayList<GoControl.GoAction> get_stones() {
+    public HashSet<GoControl.GoAction> get_stones() {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        return state.get_stones();
+    }
+
+    //@Override
+    public HashSet<GoControl.GoAction> _get_stones() {
         BoardState state = timeline.get(timeline.size() - 1);
         return state.stone_pos;
     }
@@ -31,12 +38,35 @@ public class GoRuleJapan extends GoRule {
         return action_history;
     }
 
+    /*
     public ArrayList<BoardState> getTimeline()
     {
 	return timeline;
     }
+    */
 
     public void pass(GoControl.Player next_turn)
+    {
+        NewBoardState state = null;
+
+        /* copy time line */
+        try {
+            NewBoardState tmp = new_timeline.get(new_timeline.size() - 1);
+            state = (NewBoardState) (tmp.clone());
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+
+        action_history.add(new GoControl.GoAction(
+            (next_turn == GoControl.Player.BLACK)? GoControl.Player.WHITE : GoControl.Player.BLACK,
+            null, GoControl.Action.PASS));
+
+        state.ko_x = state.ko_y = -1;
+        seq_no++;
+        new_timeline.add(state);
+    }
+
+    public void _pass(GoControl.Player next_turn)
     {
         BoardState state = null;
 
@@ -60,6 +90,29 @@ public class GoRuleJapan extends GoRule {
 
     @Override
     public boolean putStoneAt(int x, int y, GoControl.Player stone_color, GoControl.Player next_turn, int board_size) {
+        NewBoardState state = null;
+        GoControl.GoAction pos;
+
+        try {
+            NewBoardState tmp = new_timeline.get(new_timeline.size() - 1);
+            state = (NewBoardState) (tmp.clone());
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+
+        pos = new GoControl.GoAction(stone_color, x, y);
+
+        if (!state.put_stone(pos)) {
+            state = null;
+            return false;
+        }
+
+        action_history.add(pos);
+        new_timeline.add(state);
+        return true;
+    }
+
+    public boolean _putStoneAt(int x, int y, GoControl.Player stone_color, GoControl.Player next_turn, int board_size) {
         GoControl.GoAction pos;
         Point single_stone;
         int dead_count;
@@ -72,6 +125,10 @@ public class GoRuleJapan extends GoRule {
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
         }
+
+        Log.d("TEST", "START");
+        new_timeline.add(new NewBoardState());
+        Log.d("TEST", "STOP");
 
         pos = new GoControl.GoAction(stone_color, x, y);
 
@@ -89,8 +146,7 @@ public class GoRuleJapan extends GoRule {
         /* remove opponent dead group */
         dead_count = remove_dead_stones(
             state,
-            (pos.player == GoControl.Player.BLACK) ?
-                GoControl.Player.WHITE : GoControl.Player.BLACK,
+            pos,
             board_size,
             single_stone
         );
@@ -110,7 +166,7 @@ public class GoRuleJapan extends GoRule {
         /* remove my dead group */
         dead_count = remove_dead_stones(
             state,
-            pos.player,
+            pos,
             board_size,
             single_stone
         );
@@ -132,6 +188,18 @@ public class GoRuleJapan extends GoRule {
     @Override
     public boolean undo()
     {
+        if (new_timeline.size() <= 1)
+            return false;
+
+        action_history.remove(action_history.size() - 1);
+
+        new_timeline.remove(new_timeline.size() - 1);
+        return true;
+    }
+
+    //@Override
+    public boolean _undo()
+    {
 	if (timeline.size() <= 1)
 	    return false;
 
@@ -146,12 +214,12 @@ public class GoRuleJapan extends GoRule {
         int i;
         ArrayList links;
         ArrayList<Object> link_index = new ArrayList<Object>();
-        ArrayList<GoControl.GoAction> new_link, link;
+        HashSet<GoControl.GoAction> new_link, link;
 
         links = (pos.player == GoControl.Player.BLACK)? state.black_links : state.white_links;
 
         for (i = 0 ; i < links.size() ; i++) {
-            link = (ArrayList<GoControl.GoAction>) links.get(i);
+            link = (HashSet<GoControl.GoAction>) links.get(i);
 
             if (isLinkable(link, pos)) {
                 link_index.add(link);
@@ -160,7 +228,7 @@ public class GoRuleJapan extends GoRule {
 
         /* Make a link */
         if (link_index.size() == 0) {
-            new_link = new ArrayList<GoControl.GoAction>();
+            new_link = new HashSet<GoControl.GoAction>();
             new_link.add(pos);
             links.add(new_link);
             return;
@@ -168,16 +236,16 @@ public class GoRuleJapan extends GoRule {
 
         /* Add to a exist link */
         if (link_index.size() == 1) {
-            link = (ArrayList<GoControl.GoAction>) link_index.get(0);
+            link = (HashSet<GoControl.GoAction>) link_index.get(0);
             link.add(pos);
             return;
         }
 
         /* Make new merged link */
-        new_link = new ArrayList<GoControl.GoAction>();
+        new_link = new HashSet<GoControl.GoAction>();
 
         for (i = 0 ; i < link_index.size() ; i++) {
-            link = (ArrayList<GoControl.GoAction>) link_index.get(i);
+            link = (HashSet<GoControl.GoAction>) link_index.get(i);
 
             new_link.addAll(link);
         }
@@ -196,23 +264,27 @@ public class GoRuleJapan extends GoRule {
         links.add(new_link);
     }
 
-    private int remove_dead_stones(BoardState state, GoControl.Player color, int board_size, Point single_stone)
+    private int remove_dead_stones(BoardState state, GoControl.GoAction pos, int board_size, Point single_stone)
     {
         int i, j, dead_count = 0;
         ArrayList links;
-        ArrayList<GoControl.GoAction> link;
+        HashSet<GoControl.GoAction> link;
 
-        links = (color== GoControl.Player.BLACK)? state.black_links : state.white_links;
+        //Log.d("PARS", "REMOVE DEAD GROUP START");
+
+        links = (pos.player == GoControl.Player.WHITE)? state.black_links : state.white_links;
 
         for (i = 0 ; i < links.size() ; ) {
-            link = (ArrayList<GoControl.GoAction>)links.get(i);
+            link = (HashSet<GoControl.GoAction>)links.get(i);
 
             if (check_link_dead(state.stone_pos, link, board_size)) {
                 dead_count += link.size();
 
                 if (dead_count == 1) {
-                    single_stone.x = ((GoControl.GoAction) link.get(0)).where.x;
-                    single_stone.y = ((GoControl.GoAction) link.get(0)).where.y;
+                    for (GoControl.GoAction action : link) {
+                        single_stone.x = action.where.x;
+                        single_stone.y = action.where.y;
+                    }
                 }
 
                 state.stone_pos.removeAll(link);
@@ -223,18 +295,19 @@ public class GoRuleJapan extends GoRule {
             i++;
         }
 
+        //Log.d("PARS", "REMOVE DEAD GROUP END");
+
         return dead_count;
     }
 
-    private boolean check_link_dead(ArrayList<GoControl.GoAction> stone_pos, ArrayList<GoControl.GoAction> link, int board_size)
+    private boolean check_link_dead(HashSet<GoControl.GoAction> stone_pos, HashSet<GoControl.GoAction> link, int board_size)
     {
         int i;
 
         /* To disallow duplication (It makes count easy)*/
         HashSet<GoControl.GoAction> life_count = new HashSet<GoControl.GoAction>();
 
-        for (i = 0 ; i < link.size() ; i++) {
-            GoControl.GoAction pos = link.get(i);
+        for (GoControl.GoAction pos : link) {
             GoControl.GoAction tmp;
 
             /* left */
@@ -291,7 +364,7 @@ public class GoRuleJapan extends GoRule {
         return life_count;
     }
 
-    private boolean isLinkable(ArrayList<GoControl.GoAction> link, GoControl.GoAction pos) {
+    private boolean isLinkable(HashSet<GoControl.GoAction> link, GoControl.GoAction pos) {
         boolean result;
 
         /* up */

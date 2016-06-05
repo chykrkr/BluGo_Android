@@ -1,6 +1,10 @@
 package com.example.user.blugo;
 
+import android.graphics.Point;
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Created by user on 2016-06-02.
@@ -32,7 +36,7 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
-    public synchronized ArrayList<GoAction> getStone_pos() {
+    public synchronized HashSet<GoAction> getStone_pos() {
         return rule.get_stones();
     }
 
@@ -78,6 +82,63 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
+    public synchronized boolean load_sgf(String text) {
+        ArrayList<SgfParser.ParsedItem> result;
+        SgfParser parser = new SgfParser();
+        Point p;
+
+        Log.d("PARS", "SGF parsing started");
+        result = parser.parse(text);
+        Log.d("PARS", "SGF parsing ended");
+
+        this.current_turn = Player.BLACK;
+        this.rule = null;
+        this.rule = new GoRuleJapan();
+
+        for (SgfParser.ParsedItem item : result) {
+            switch (item.type) {
+                case BOARD_SIZE:
+                    Integer size = (Integer) item.content;
+                    this.board_size = size;
+                    break;
+
+                case KOMI:
+                    break;
+
+                case WHITE_PUT:
+                    p = (Point) item.content;
+                    rule.putStoneAt(p.x, p.y, Player.WHITE, Player.BLACK, board_size);
+
+                    current_turn = Player.BLACK;
+                    break;
+
+                case WHITE_PASS:
+                    current_turn = Player.BLACK;
+                    rule.pass(Player.BLACK);
+                    break;
+
+                case BLACK_PUT:
+                    p = (Point) item.content;
+                    rule.putStoneAt(p.x, p.y, Player.BLACK, Player.WHITE, board_size);
+
+                    current_turn = Player.WHITE;
+                    break;
+
+                case BLACK_PASS:
+                    current_turn = Player.WHITE;
+                    rule.pass(Player.WHITE);
+                    break;
+            }
+        }
+
+        Log.d("PARS", "Game data generation completed");
+        //this.callback_receiver.callback_board_state_changed();
+        Log.d("PARS", "Draw done");
+
+        return true;
+    }
+
+    @Override
     public synchronized void pass() {
         Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
 
@@ -98,9 +159,8 @@ public class GoControlSingle extends GoControl {
 	    return;
 	}
 
-	timeline = rule.getTimeline();
-	state = timeline.get(timeline.size() - 1);
-	current_turn = state.next_turn;
+        Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
+        current_turn = next_turn;
 
 	this.callback_receiver.callback_board_state_changed();
     }
