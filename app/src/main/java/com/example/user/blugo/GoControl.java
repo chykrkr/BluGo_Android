@@ -122,6 +122,17 @@ public abstract class GoControl {
         public void callback_board_state_changed();
     }
 
+    public static class GoInfo
+    {
+        public int white_dead = 0;
+        public int black_dead = 0;
+        public int white_score = 0;
+        public int black_score = 0;
+        public float komi = 6.5f;
+        public int turn_num = 0;
+        public Player turn = Player.BLACK;
+    }
+
     public abstract boolean isMyTurn();
     public abstract HashSet<GoAction> getStone_pos();
     public abstract int getBoardSize();
@@ -129,9 +140,13 @@ public abstract class GoControl {
     public abstract boolean putStoneAt(int x, int y, boolean pass);
     public abstract String get_sgf();
     public abstract boolean load_sgf(String text);
+    public abstract boolean calc_mode();
+    public abstract ArrayList<GoRule.BoardPos> get_calc_info();
 
     public abstract void pass();
     public abstract void undo();
+
+    public abstract GoInfo get_info();
 
     public void new_game() {
 

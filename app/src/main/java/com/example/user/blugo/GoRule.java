@@ -4,15 +4,25 @@ import android.graphics.Point;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by user on 2016-06-02.
  */
 public abstract class GoRule {
     public enum BoardPosState {
-        BLACK, WHITE, EMPTY
+        BLACK,
+        WHITE,
+        EMPTY,
+        BLACK_DEAD,
+        WHITE_DEAD,
+        EMPTY_NEUTRAL,
+        EMPTY_BLACK,
+        EMPTY_WHITE,
     }
+
     protected class BoardState {
         /*
             stone_pos's data structure is very important.
@@ -110,6 +120,7 @@ public abstract class GoRule {
         public BoardPos [][] pos;
         public int size = 19;
         public int ko_x = -1, ko_y = -1;
+        public int white_dead = 0, black_dead = 0;
 
         NewBoardState() {
             this(19);
@@ -128,6 +139,9 @@ public abstract class GoRule {
 
             state.ko_x = ko_x;
             state.ko_y = ko_y;
+
+            state.white_dead = white_dead;
+            state.black_dead = black_dead;
 
             return state;
         }
@@ -212,6 +226,11 @@ public abstract class GoRule {
             /* check suicide */
             if (dead_stone == 0 && check_dead(x, y) == true)
                 return false;
+
+            if (action.player == GoControl.Player.BLACK)
+                white_dead += dead_stone;
+            else
+                black_dead += dead_stone;
 
             return true;
         }
@@ -366,7 +385,7 @@ public abstract class GoRule {
             return deadpos.size();
         }
 
-        int calc_life_count(int x, int y)
+        private int calc_life_count(int x, int y)
         {
             int count = 0;
 
@@ -450,6 +469,151 @@ public abstract class GoRule {
 
             return stones;
         }
+
+        public ArrayList<BoardPos> get_calc_info() {
+            int i;
+            ArrayList<BoardPos> info = new ArrayList<>();
+
+            for (i = 0 ; i < pos.length ; i++) {
+                info.addAll(new ArrayList<BoardPos>(Arrays.asList(pos[i])));
+            }
+
+            return info;
+        }
+
+        public void cancel_calc()
+        {
+            int i, j;
+
+            for (i = 0 ; i < pos.length ; i++) {
+                for (j = 0 ; j < pos[i].length ; j++) {
+                    switch (pos[i][j].state) {
+                        case EMPTY_NEUTRAL:
+                        case EMPTY_BLACK:
+                        case EMPTY_WHITE:
+                            pos[i][j].state = BoardPosState.EMPTY;
+                            break;
+
+                        case BLACK_DEAD:
+                            pos[i][j].state = BoardPosState.BLACK;
+                            break;
+
+                        case WHITE_DEAD:
+                            pos[i][j].state = BoardPosState.WHITE;
+                            break;
+                    }
+                }
+            }
+        }
+
+        public void toggle_owner(int x, int y)
+        {
+            BoardPosState from, to;
+
+            try {
+                to = from = pos[x][y].state;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                return;
+            }
+
+            switch (from) {
+                case BLACK:
+                    to = BoardPosState.BLACK_DEAD;
+                    break;
+
+                case WHITE:
+                    to = BoardPosState.WHITE_DEAD;
+                    break;
+
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                    to = BoardPosState.EMPTY_BLACK;
+                    break;
+
+                case EMPTY_BLACK:
+                    to = BoardPosState.EMPTY_WHITE;
+                    break;
+
+                case EMPTY_WHITE:
+                    to = BoardPosState.EMPTY_NEUTRAL;
+                    break;
+
+                case BLACK_DEAD:
+                    to = BoardPosState.BLACK;
+                    break;
+
+                case WHITE_DEAD:
+                    to = BoardPosState.WHITE;
+                    break;
+            }
+
+            flood_fill(x, y, from, to);
+        }
+
+        private void flood_fill(int x, int y, BoardPosState from, BoardPosState to)
+        {
+            if (x < 0 || x >= size)
+                return;
+
+            if (y < 0 || y >= size)
+                return;
+
+            if (pos[x][y].state == to)
+                return;
+
+            if (pos[x][y].state != from)
+                return;
+
+            pos[x][y].state = to;
+
+            /* south */
+            flood_fill(x, y + 1, from, to);
+
+            /* north */
+            flood_fill(x, y - 1, from, to);
+
+            /* west */
+            flood_fill(x - 1, y, from, to);
+
+            /* east */
+            flood_fill(x + 1, y, from, to);
+        }
+
+        public void get_score(AtomicInteger white, AtomicInteger black)
+        {
+            int i, j;
+            int white_count = 0, black_count = 0;
+
+            for (i = 0 ; i < pos.length ; i++) {
+                for (j = 0 ; j < pos[i].length ; j++) {
+                    switch (pos[i][j].state) {
+                        case BLACK:
+                        case WHITE:
+                        case EMPTY:
+                        case EMPTY_NEUTRAL:
+                            break;
+
+                        case EMPTY_BLACK:
+                            black_count++;
+                            break;
+
+                        case EMPTY_WHITE:
+                            white_count++;
+                            break;
+
+                        case BLACK_DEAD:
+                            white_count+=2;
+                            break;
+
+                        case WHITE_DEAD:
+                            black_count+=2;
+                            break;
+                    }
+                }
+            }
+
+            white.set(white_count); black.set(black_count);
+        }
     }
 
     protected class BoardPos {
@@ -468,9 +632,16 @@ public abstract class GoRule {
 
 
     public abstract HashSet<GoControl.GoAction> get_stones();
+    public abstract ArrayList<BoardPos> get_calc_info();
+
     public abstract ArrayList<GoControl.GoAction> get_action_history();
     /*public abstract ArrayList<BoardState> getTimeline();*/
     public abstract boolean putStoneAt(int x, int y, GoControl.Player stone_color, GoControl.Player next_turn, int board_size);
+    public abstract void toggle_owner(int x, int y);
     public abstract void pass(GoControl.Player next_turn);
     public abstract boolean undo();
+    public abstract void cancel_calc();
+
+    public abstract void get_dead(AtomicInteger white, AtomicInteger black);
+    public abstract void get_score(AtomicInteger white, AtomicInteger black);
 }

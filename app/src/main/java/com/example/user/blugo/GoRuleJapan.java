@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by user on 2016-06-02.
@@ -25,6 +26,12 @@ public class GoRuleJapan extends GoRule {
     public HashSet<GoControl.GoAction> get_stones() {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
         return state.get_stones();
+    }
+
+    @Override
+    public ArrayList<BoardPos> get_calc_info() {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        return state.get_calc_info();
     }
 
     //@Override
@@ -112,77 +119,10 @@ public class GoRuleJapan extends GoRule {
         return true;
     }
 
-    public boolean _putStoneAt(int x, int y, GoControl.Player stone_color, GoControl.Player next_turn, int board_size) {
-        GoControl.GoAction pos;
-        Point single_stone;
-        int dead_count;
-        BoardState state = null;
-
-        try {
-            BoardState tmp = timeline.get(timeline.size() - 1);
-            state = (BoardState) (tmp.clone());
-            state.next_turn = next_turn;
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-        }
-
-        Log.d("TEST", "START");
-        new_timeline.add(new NewBoardState());
-        Log.d("TEST", "STOP");
-
-        pos = new GoControl.GoAction(stone_color, x, y);
-
-        single_stone = new Point(-1, -1);
-
-        /* Rule 1 : Check if there is a stone already. */
-        if (state.stone_pos.contains(pos)) {
-            state = null;
-            return  false;
-        }
-
-        state.stone_pos.add(pos);
-        add_stone_to_link(state, pos);
-
-        /* remove opponent dead group */
-        dead_count = remove_dead_stones(
-            state,
-            pos,
-            board_size,
-            single_stone
-        );
-
-        /* Is opponent's dead stone marked as KO */
-        if (dead_count == 1 && state.ko_pos != null && state.ko_pos.equals(single_stone)) {
-            /* We cannot kill just one stone that is marked as KO */
-            state = null;
-            return false;
-        }
-        /* If we killed just one stone, mark current stone position as a ko */
-        if (dead_count == 1) {
-            state.ko_pos = pos.where;
-        } else
-            state.ko_pos = null;
-
-        /* remove my dead group */
-        dead_count = remove_dead_stones(
-            state,
-            pos,
-            board_size,
-            single_stone
-        );
-
-        /* It's nonsens if dead_count is greater than 0. Because it means suicide. */
-        if (dead_count > 0) {
-            /* It's suicide. Suicide is not allowed */
-            state = null;
-            return false;
-        }
-
-        seq_no++;
-        action_history.add(pos);
-        timeline.add(state);
-
-        return true;
+    @Override
+    public void toggle_owner(int x, int y) {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        state.toggle_owner(x, y);
     }
 
     @Override
@@ -197,6 +137,19 @@ public class GoRuleJapan extends GoRule {
         return true;
     }
 
+    @Override
+    public void get_dead(AtomicInteger white, AtomicInteger black) {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        white.set(state.white_dead);
+        black.set(state.black_dead);
+    }
+
+    @Override
+    public void get_score(AtomicInteger white, AtomicInteger black) {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        state.get_score(white, black);
+    }
+
     //@Override
     public boolean _undo()
     {
@@ -207,6 +160,13 @@ public class GoRuleJapan extends GoRule {
 
 	timeline.remove(timeline.size() - 1);
 	return true;
+    }
+
+    @Override
+    public void cancel_calc()
+    {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        state.cancel_calc();
     }
 
     private void add_stone_to_link(BoardState state, GoControl.GoAction pos)

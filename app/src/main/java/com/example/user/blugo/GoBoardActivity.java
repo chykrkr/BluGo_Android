@@ -10,6 +10,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.NumberPicker;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,12 +21,45 @@ import java.nio.charset.StandardCharsets;
 
 public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, Handler.Callback {
     private GoBoardView gv;
+    private TextView txt_info;
     private GoControl single_game = new GoControlSingle();
     private ProgressDialog progressBar;
     private String sgf_string = null;
     private File file;
+    public static final int MSG_LOAD_END = 1;
+    public static final int MSG_INFO_CHANGED = 2;
 
     public Handler msg_handler = new Handler(this);
+
+    private String get_info_text() {
+        String str, result;
+        GoControl.GoInfo info =  single_game.get_info();
+        float score_diff;
+        float white_final, black_final;
+
+        if (single_game.calc_mode()) {
+            white_final = info.white_score + info.black_dead + info.komi;
+            black_final = info.black_score + info.white_dead;
+            score_diff = white_final - black_final;
+
+            if (score_diff == 0) {
+                result = "DRAW";
+            } else if (score_diff > 0) {
+                result = String.format("W+%.1f", score_diff);
+            } else {
+                result = String.format("B+%.1f", Math.abs(score_diff));
+            }
+
+            str = String.format("ws: %.1f, bs: %d, %s", white_final, (int) black_final, result);
+        } else {
+            str = String.format("%s(%d), wd: %d, bd: %d",
+                info.turn == GoControl.Player.WHITE? "W" : "B",
+                info.turn_num,
+                info.white_dead, info.black_dead);
+        }
+
+        return str;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +70,9 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
         gv = (GoBoardView) findViewById(R.id.go_board_view);
         gv.setGo_control(single_game);
         gv.setFocusable(true);
+
+        txt_info = (TextView) findViewById(R.id.text_info);
+        txt_info.setText(get_info_text());
     }
 
     public void undo(View view)
@@ -136,7 +175,7 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             public void run() {
                 single_game.load_sgf(sgf_string);
                 Message msg;
-                msg = Message.obtain(GoBoardActivity.this.msg_handler, 1, "msg");
+                msg = Message.obtain(GoBoardActivity.this.msg_handler, MSG_LOAD_END, "msg");
                 GoBoardActivity.this.msg_handler.sendMessage(msg);
             }
         }).start();
@@ -146,8 +185,18 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
     @Override
     public boolean handleMessage(Message msg) {
-        gv.invalidate();
-        progressBar.dismiss();
+        switch (msg.what) {
+            case MSG_LOAD_END:
+                gv.invalidate();
+                txt_info.setText(get_info_text());
+                progressBar.dismiss();
+                return true;
+
+            case MSG_INFO_CHANGED:
+                txt_info.setText(get_info_text());
+                return true;
+        }
+
         return false;
     }
 }

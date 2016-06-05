@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by user on 2016-06-02.
@@ -14,6 +15,8 @@ public class GoControlSingle extends GoControl {
     private Player current_turn = Player.BLACK;
     private GoRule rule;
     private float komi = 6.5f;
+    private int pass_count = 0;
+    private static final int MAX_PASS_COUNT = 2;
 
     GoControlSingle() {
         this(19, Player.BLACK, null, new GoRuleJapan());
@@ -53,9 +56,20 @@ public class GoControlSingle extends GoControl {
     @Override
     public synchronized boolean putStoneAt(int x, int y, boolean pass) {
         Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
+
+        if (this.calc_mode()) {
+            rule.toggle_owner(x, y);
+
+            if (callback_receiver != null)
+                callback_receiver.callback_board_state_changed();
+
+            return true;
+        }
         /* put stone according to specified RULE */
         if (rule.putStoneAt(x, y, current_turn, next_turn, board_size) == false)
             return false;
+
+        pass_count = 0;
 
 	current_turn = next_turn;
 
@@ -86,6 +100,8 @@ public class GoControlSingle extends GoControl {
         ArrayList<SgfParser.ParsedItem> result;
         SgfParser parser = new SgfParser();
         Point p;
+
+        pass_count = 0;
 
         Log.d("PARS", "SGF parsing started");
         result = parser.parse(text);
@@ -140,10 +156,20 @@ public class GoControlSingle extends GoControl {
 
     @Override
     public synchronized void pass() {
+        int pass;
+
+        if (pass_count >= MAX_PASS_COUNT ) {
+            return;
+        }
+
         Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
 
         current_turn = next_turn;
         rule.pass(next_turn);
+
+        pass_count++;
+
+        /* calc territory */
 
         if (callback_receiver != null)
             callback_receiver.callback_board_state_changed();
@@ -155,14 +181,54 @@ public class GoControlSingle extends GoControl {
 	ArrayList<GoRule.BoardState> timeline;
 	GoRule.BoardState state;
 
+        if (calc_mode()) {
+            rule.cancel_calc();
+        }
+
+        ArrayList<GoAction> history = rule.get_action_history();
+        GoAction last_action, current_action;
+        last_action = history.get(history.size() - 1);
+
 	if (!this.rule.undo()) {
 	    return;
 	}
 
-        Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
-        current_turn = next_turn;
+        if (history.size() > 0) {
+            current_action = history.get(history.size() - 1);
+            current_turn = current_action.player;
 
-	this.callback_receiver.callback_board_state_changed();
+            if (last_action.action == Action.PASS && pass_count > 0) {
+                pass_count--;
+            }
+        } else {
+            /* We are back to start of game */
+            current_turn = Player.BLACK;
+        }
+
+        this.callback_receiver.callback_board_state_changed();
+    }
+
+    @Override
+    public GoInfo get_info() {
+        GoInfo info = new GoInfo();
+        AtomicInteger value1 = new AtomicInteger(0), value2  = new AtomicInteger(0);
+        info.turn = this.current_turn;
+        info.komi = this.komi;
+
+        rule.get_dead(value1, value2);
+        info.white_dead = value1.get();
+        info.black_dead = value2.get();
+
+        if (calc_mode()) {
+            rule.get_score(value1, value2);
+            info.white_score = value1.get();
+            info.black_score = value2.get();
+        }
+
+        ArrayList<GoAction> history = rule.get_action_history();
+        info.turn_num = history.size() + 1;
+
+        return info;
     }
 
     @Override
@@ -175,5 +241,18 @@ public class GoControlSingle extends GoControl {
 
     public synchronized void load_game(String sgf_string) {
         this.callback_receiver.callback_board_state_changed();
+    }
+
+    public boolean calc_mode()
+    {
+        if (pass_count >= MAX_PASS_COUNT)
+            return true;
+
+        return false;
+    }
+
+    @Override
+    public ArrayList<GoRule.BoardPos> get_calc_info() {
+        return rule.get_calc_info();
     }
 }

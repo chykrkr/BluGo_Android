@@ -12,7 +12,10 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.graphics.drawable.shapes.PathShape;
+import android.graphics.drawable.shapes.RectShape;
 import android.media.MediaPlayer;
+import android.os.Message;
+import android.support.annotation.ColorInt;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -135,14 +138,16 @@ public class GoBoardView extends View implements GoControl.Callback {
             return true;
         }
 
-        Log.d("TOUCHEVT", event.toString());
+        //Log.d("TOUCHEVT", event.toString());
 
         switch (event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
                 p = getGhost_pos(event.getX(), event.getY());
 
-                if (!ghost_pos.equals(p)) {
+                if (go_control.calc_mode()) {
+                    go_control.putStoneAt(p.x, p.y, false);
+                } else if (!ghost_pos.equals(p)) {
                     ghost_pos.x = p.x;
                     ghost_pos.y = p.y;
                     this.invalidate();
@@ -210,7 +215,7 @@ public class GoBoardView extends View implements GoControl.Callback {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        ShapeDrawable boardline, flower_point;
+        ShapeDrawable boardline, flower_point, rect;
         Path path;
         super.onDraw(canvas);
 
@@ -296,21 +301,80 @@ public class GoBoardView extends View implements GoControl.Callback {
             }
         }
 
-        HashSet<GoControl.GoAction> stone_pos = go_control.getStone_pos();
+        boolean draw_ghost = false;
 
-        for (GoControl.GoAction p : stone_pos) {
-            if (p.action != GoControl.Action.PUT || p.where == null)
-                continue;
+        if (go_control.calc_mode()) {
+            ArrayList<GoRule.BoardPos> info = go_control.get_calc_info();
 
-            draw_stone(canvas, p.player, board_canvas_x, board_canvas_y, p.where.x, p.where.y, board_canvas_w, board_canvas_h, (int) board_square_size, OPAQUE_ALPHA);
+            rect = new ShapeDrawable(new RectShape());
+
+            for (i = 0 ; i < info.size() ; i++) {
+                GoRule.BoardPos cinfo = info.get(i);
+
+                switch (cinfo.state) {
+                    case BLACK:
+                        draw_stone(canvas, GoControl.Player.BLACK,
+                            board_canvas_x, board_canvas_y,
+                            i / board_size, i % board_size,
+                            board_canvas_w, board_canvas_h,
+                            (int) board_square_size, OPAQUE_ALPHA);
+                        continue;
+                    case WHITE:
+                        draw_stone(canvas, GoControl.Player.WHITE,
+                            board_canvas_x, board_canvas_y,
+                            i / board_size, i % board_size,
+                            board_canvas_w, board_canvas_h,
+                            (int) board_square_size, OPAQUE_ALPHA);
+                        continue;
+                }
+
+                switch (cinfo.state) {
+                    case EMPTY:
+                    case EMPTY_NEUTRAL:
+                        rect.getPaint().setColor(0xffff0000);
+                        break;
+
+                    case WHITE_DEAD:
+                        draw_stone(canvas, GoControl.Player.WHITE,
+                            board_canvas_x, board_canvas_y,
+                            i / board_size, i % board_size,
+                            board_canvas_w, board_canvas_h,
+                            (int) board_square_size, OPAQUE_ALPHA);
+                    case EMPTY_BLACK:
+                        rect.getPaint().setColor(0xff000000);
+                        break;
+
+                    case BLACK_DEAD:
+                        draw_stone(canvas, GoControl.Player.BLACK,
+                            board_canvas_x, board_canvas_y,
+                            i / board_size, i % board_size,
+                            board_canvas_w, board_canvas_h,
+                            (int) board_square_size, OPAQUE_ALPHA);
+                    case EMPTY_WHITE:
+                        rect.getPaint().setColor(0xffffffff);
+                        break;
+                }
+
+                draw_rect(canvas, rect,  board_canvas_x, board_canvas_y,
+                    i / board_size, i % board_size,
+                    board_canvas_w, board_canvas_h, (int) board_square_size);
+            }
+        } else {
+            HashSet<GoControl.GoAction> stone_pos = go_control.getStone_pos();
+
+            for (GoControl.GoAction p : stone_pos) {
+                if (p.action != GoControl.Action.PUT || p.where == null)
+                    continue;
+
+                draw_stone(canvas, p.player, board_canvas_x, board_canvas_y, p.where.x, p.where.y, board_canvas_w, board_canvas_h, (int) board_square_size, OPAQUE_ALPHA);
+            }
+
+            draw_ghost = go_control.getCurrent_turn() == GoControl.Player.BLACK || go_control.getCurrent_turn() == GoControl.Player.WHITE;
+            draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < board_size);
+            draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < board_size);
+            draw_ghost = draw_ghost && !stone_pos.contains(new GoControl.GoAction(ghost_pos.x, ghost_pos.y));
+            draw_ghost = draw_ghost && !go_control.calc_mode();
         }
-
-        boolean draw_ghost;
-
-        draw_ghost = go_control.getCurrent_turn() == GoControl.Player.BLACK || go_control.getCurrent_turn() == GoControl.Player.WHITE;
-        draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < board_size);
-        draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < board_size);
-        draw_ghost = draw_ghost && !stone_pos.contains(new GoControl.GoAction(ghost_pos.x, ghost_pos.y));
 
         /* draw ghost */
         if (draw_ghost) {
@@ -323,6 +387,11 @@ public class GoBoardView extends View implements GoControl.Callback {
         draw_stone(canvas, 0, x, y, 3, 1, width, height, (int) square);
         draw_stone(canvas, 0, x, y, 3, 3, width, height, (int) square);
         */
+
+        Message msg;
+        GoBoardActivity parent = (GoBoardActivity) this.getContext();
+        msg = Message.obtain(parent.msg_handler, GoBoardActivity.MSG_INFO_CHANGED, "msg");
+        parent.msg_handler.sendMessage(msg);
     }
 
     private void draw_stone(Canvas canvas, GoControl.Player stone_color, int x, int y, int i, int j,
@@ -351,6 +420,26 @@ public class GoBoardView extends View implements GoControl.Callback {
         image.setBounds(tmpx - tmpw, tmpy - tmph, tmpx + tmpw, tmpy + tmph);
         image.setAlpha(alpha);
         image.draw(canvas);
+    }
+
+    private void draw_rect(Canvas canvas, ShapeDrawable s,
+                           int x, int y, int i, int j,
+                           int width, int height, int square)
+    {
+        int tmpx, tmpy, tmpw, tmph;
+        int board_size;
+
+        if (go_control == null)
+            return;
+
+        board_size = go_control.getBoardSize();
+
+        tmph = tmpw = square/5;
+
+        tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
+        tmpy = y + square/2 + j * (height -  square)/(board_size - 1);
+        s.setBounds(tmpx - tmpw, tmpy - tmph, tmpx + tmpw, tmpy + tmph);
+        s.draw(canvas);
     }
 
     private void draw_flower(Canvas canvas, ShapeDrawable s, int x, int y, int i, int j,
