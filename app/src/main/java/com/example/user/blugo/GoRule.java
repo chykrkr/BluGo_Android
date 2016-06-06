@@ -6,7 +6,9 @@ import android.util.Log;
 import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -14,19 +16,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class GoRule {
     public enum BoardPosState {
-        BLACK,
-        WHITE,
-        EMPTY,
-        BLACK_DEAD,
-        WHITE_DEAD,
-        EMPTY_NEUTRAL,
-        EMPTY_BLACK,
-        EMPTY_WHITE,
+        EMPTY(0),
+        BLACK(1),
+        WHITE(2),
+        BLACK_DEAD(3),
+        WHITE_DEAD(4),
+        EMPTY_NEUTRAL(5),
+        EMPTY_BLACK(6),
+        EMPTY_WHITE(7);
+
+        private final int value;
+
+        private BoardPosState(int value) {
+            this.value = value;
+        }
+
+        public static BoardPosState valueOf(int type)
+        {
+            return (BoardPosState) BoardPosState.values()[type];
+        }
+
+        public int getValue()
+        {
+            return value;
+        }
     }
 
     protected class NewBoardState {
         /* May one dimensional array be better ? */
-        public BoardPos [] pos;
+        public int [] pos;
         public int size = 19;
         public int ko_x = -1, ko_y = -1;
         public int white_dead = 0, black_dead = 0;
@@ -48,11 +66,14 @@ public abstract class GoRule {
 
             /* swallow copy */
             //System.arraycopy(this.pos, 0, state.pos, 0, this.pos.length);
-            state.pos = new BoardPos[size * size];
+            state.pos = new int[size * size];
+            System.arraycopy(this.pos, 0, state.pos, 0, this.pos.length);
 
+            /*
             for (i = 0 ; i  < pos.length ;i ++) {
                 state.pos[i] = (BoardPos) pos[i].clone();
             }
+            */
 
             state.ko_x = ko_x;
             state.ko_y = ko_y;
@@ -68,12 +89,8 @@ public abstract class GoRule {
         }
 
         NewBoardState(int size, int ko_x, int ko_y) {
-            pos = new BoardPos[size * size];
+            pos = new int[size * size];
             int i;
-
-            for (i = 0 ; i < pos.length ; i++) {
-                pos[i] = new BoardPos();
-            }
 
             this.ko_x = ko_x;
             this.ko_y = ko_y;
@@ -87,7 +104,23 @@ public abstract class GoRule {
             if (y < 0 || y >= size)
                 return false;
 
-            return pos[x + y * size].state == BoardPosState.EMPTY;
+            return  (pos[x + y * size] & 0xFF) == BoardPosState.EMPTY.getValue();
+        }
+
+        private int combine_to_int(int group_id, BoardPosState state)
+        {
+            return group_id << 8 | state.getValue();
+        }
+
+        private int get_group_id(int value)
+        {
+            return (value >> 8) & 0xFFFF;
+        }
+
+        private BoardPosState get_state(int value)
+        {
+            /* Enumeration's actual value cannot be zero*/
+            return BoardPosState.valueOf(value & 0xFF);
         }
 
         boolean put_stone(GoControl.GoAction action)
@@ -97,6 +130,8 @@ public abstract class GoRule {
             /* Because default ko_pos is -1, this value should be -2 */
             int dead_stone = 0, dead;
             Point ko_p = null;
+            BoardPosState state;
+            int group_id;
 
 
             /* 1. check if there are already a stone */
@@ -104,24 +139,23 @@ public abstract class GoRule {
                 return false;
 
             /* Put a stone. Link surrounding stones as one group */
-            spot = new BoardPos();
-            spot.state = (action.player == GoControl.Player.BLACK) ? BoardPosState.BLACK : BoardPosState.WHITE;
-            spot.group_id = get_grpid_new_stone(x, y, spot);
+            state = (action.player == GoControl.Player.BLACK) ? BoardPosState.BLACK : BoardPosState.WHITE;
+            group_id = get_grpid_new_stone(x, y, state);
 
-            pos[x + y * size] = spot;
+            pos[x + y * size] = combine_to_int(group_id, state);
 
             /* remove opponent dead group */
 
-            dead_stone += dead = try_kill_position(x - 1, y, spot.state);
+            dead_stone += dead = try_kill_position(x - 1, y, state);
             if (dead == 1)
                 ko_p = new Point(x - 1, y);
-            dead_stone += dead = try_kill_position(x + 1, y, spot.state);
+            dead_stone += dead = try_kill_position(x + 1, y, state);
             if (dead == 1)
                 ko_p = new Point(x + 1, y);
-            dead_stone += dead = try_kill_position(x, y - 1, spot.state);
+            dead_stone += dead = try_kill_position(x, y - 1, state);
             if (dead == 1)
                 ko_p = new Point(x, y - 1);
-            dead_stone += dead = try_kill_position(x, y + 1, spot.state);
+            dead_stone += dead = try_kill_position(x, y + 1, state);
             if (dead == 1)
                 ko_p = new Point(x, y + 1);
 
@@ -150,27 +184,27 @@ public abstract class GoRule {
             return true;
         }
 
-        private int get_grpid_new_stone(int x, int y, BoardPos spot)
+        private int get_grpid_new_stone(int x, int y, BoardPosState state)
         {
             int group_id  = 0;
             int gid_l, gid_r, gid_u, gid_d;
             boolean lc, rc, uc, dc;
 
             /*  Get minimum grp_id from surrounding stones */
-            group_id = gid_l = left_grp_id(x, y, spot.state);
+            group_id = gid_l = left_grp_id(x, y, state);
             lc = (gid_l >= 1)? true : false;
 
-            gid_r = right_grp_id(x, y, spot.state);
+            gid_r = right_grp_id(x, y, state);
             if ((group_id < 1) || (gid_r >=1 && gid_r < group_id))
                 group_id = gid_r;
             rc = (gid_r >= 1)? true : false;
 
-            gid_u = up_grp_id(x, y, spot.state);
+            gid_u = up_grp_id(x, y, state);
             if ((group_id < 1) || (gid_u >=1 && gid_u < group_id))
                 group_id = gid_u;
             uc = (gid_u >= 1)? true : false;
 
-            gid_d = down_grp_id(x, y, spot.state);
+            gid_d = down_grp_id(x, y, state);
             if ((group_id < 1) || (gid_d >= 1 && gid_d < group_id))
                 group_id = gid_d;
             dc = (gid_d >= 1)? true : false;
@@ -201,11 +235,12 @@ public abstract class GoRule {
 
         private int get_next_grpid() {
             int grp_id = 0;
-            int i;
+            int i, tmp;
 
             for (i = 0 ; i < pos.length ; i++) {
-                if (pos[i].group_id > grp_id)
-                    grp_id = pos[i].group_id;
+                tmp = get_group_id(pos[i]);
+                if (tmp > grp_id)
+                    grp_id = tmp;
             }
 
             /* now grp_id is max */
@@ -229,8 +264,9 @@ public abstract class GoRule {
 
             /* need optimization */
             for (i = 0 ; i < pos.length ; i++) {
-                if (pos[i].group_id == from)
-                    pos[i].group_id = to;
+                if (get_group_id(pos[i]) == from)
+
+                    pos[i] = combine_to_int(to, get_state(pos[i]));
             }
 
             return to;
@@ -240,11 +276,11 @@ public abstract class GoRule {
         {
             int i;
             int group_id;
-            group_id = pos[x + y * size].group_id;
+            group_id = get_group_id(pos[x + y * size]);
 
             /* need optimization */
             for (i = 0 ; i < pos.length ; i++) {
-                    if (pos[i].group_id == group_id && calc_life_count(i % size, i / size) > 0) {
+                    if (get_group_id(pos[i]) == group_id && calc_life_count(i % size, i / size) > 0) {
                         return false;
                     }
             }
@@ -256,8 +292,7 @@ public abstract class GoRule {
         {
             int group_id;
             int i, j;
-            ArrayList<BoardPos> deadpos = new ArrayList<>();
-
+            int dead_count = 0;
 
             if (x < 0 || x >= size)
                 return 0;
@@ -265,31 +300,35 @@ public abstract class GoRule {
             if (y < 0 || y >= size)
                 return 0;
 
-            if (pos[x + y * size].state == BoardPosState.EMPTY)
+            if (get_state(pos[x + y * size]) == BoardPosState.EMPTY)
                 return 0;
 
-            if (pos[x + y * size].state == color)
+            if (get_state(pos[x + y * size]) == color)
                 return 0;
 
-            group_id = pos[x + y * size].group_id;
+            group_id = get_group_id(pos[x + y * size]);
 
             /* need optimization */
             for (i = 0 ; i < pos.length ; i++) {
-                if (pos[i].group_id != group_id)
+                if (get_group_id(pos[i]) != group_id)
                     continue;
 
                 if (calc_life_count(i % size, i / size) > 0)
                     return 0;
 
-                deadpos.add(pos[i]);
+                dead_count++;
             }
 
-            for (BoardPos p : deadpos) {
-                p.group_id = 0;
-                p.state = BoardPosState.EMPTY;
+            if (dead_count < 1)
+                return dead_count;
+
+            for (i = 0 ; i < pos.length ; i++) {
+                if (get_group_id(pos[i]) != group_id)
+                    continue;
+                pos[i] = combine_to_int(0, BoardPosState.EMPTY);
             }
 
-            return deadpos.size();
+            return dead_count;
         }
 
         private int calc_life_count(int x, int y)
@@ -308,65 +347,68 @@ public abstract class GoRule {
         {
             x--;
             if (x < 0)
-                return -1;
+                return 0;
 
-            if (pos[x + y * size].state == color)
-                return pos[x + y * size].group_id;
+            if (get_state(pos[x + y * size]) == color)
+                return get_group_id(pos[x + y * size]);
 
-            return -1;
+            return 0;
         }
 
         private int right_grp_id(int x, int y, BoardPosState color)
         {
             x++;
             if (x >= size)
-                return -1;
+                return 0;
 
-            if (pos[x + y * size].state == color)
-                return pos[x + y * size].group_id;
+            if (get_state(pos[x + y * size]) == color)
+                return get_group_id(pos[x + y * size]);
 
-            return -1;
+            return 0;
         }
 
         private int up_grp_id(int x, int y, BoardPosState color)
         {
             y--;
             if (y < 0)
-                return -1;
+                return 0;
 
-            if (pos[x + y * size].state == color)
-                return pos[x + y * size].group_id;
+            if (get_state(pos[x + y * size]) == color)
+                return get_group_id(pos[x + y * size]);
 
-            return -1;
+            return 0;
         }
 
         private int down_grp_id(int x, int y, BoardPosState color)
         {
             y++;
             if (y >= size)
-                return -1;
+                return 0;
 
-            if (pos[x + y * size].state == color)
-                return pos[x + y * size].group_id;
+            if (get_state(pos[x + y * size]) == color)
+                return get_group_id(pos[x + y * size]);
 
-            return -1;
+            return 0;
         }
 
         public HashSet<GoControl.GoAction> get_stones()
         {
             int i, j;
+            BoardPosState cur_state;
 
             HashSet<GoControl.GoAction> stones = new HashSet<>();
             GoControl.GoAction action;
 
             /* need optimization */
             for (i = 0 ; i < pos.length ; i++) {
-                if (pos[i].state == BoardPosState.EMPTY) {
+                cur_state = get_state(pos[i]);
+
+                if (cur_state == BoardPosState.EMPTY) {
                     continue;
                 }
 
                 action = new  GoControl.GoAction(
-                    pos[i].state  == BoardPosState.BLACK?
+                    cur_state  == BoardPosState.BLACK?
                         GoControl.Player.BLACK : GoControl.Player.WHITE,
                     i % size, i / size);
                 stones.add(action);
@@ -376,8 +418,18 @@ public abstract class GoRule {
         }
 
         public ArrayList<BoardPos> get_calc_info() {
+            ArrayList<BoardPos> result = new ArrayList<>();
+            BoardPos bpos;
+            int i;
 
-            return new ArrayList<BoardPos>(Arrays.asList(pos));
+            for (i = 0 ; i < pos.length ; i++) {
+                bpos = new BoardPos();
+                bpos.state = get_state(pos[i]);
+                bpos.group_id = get_group_id(pos[i]);
+                result.add(bpos);
+            }
+
+            return result;
         }
 
         public void cancel_calc()
@@ -385,19 +437,19 @@ public abstract class GoRule {
             int i, j;
 
             for (i = 0 ; i < pos.length ; i++) {
-                switch (pos[i].state) {
+                switch (get_state(pos[i])) {
                     case EMPTY_NEUTRAL:
                     case EMPTY_BLACK:
                     case EMPTY_WHITE:
-                        pos[i].state = BoardPosState.EMPTY;
+                        pos[i] = combine_to_int(get_group_id(pos[i]), BoardPosState.EMPTY);
                         break;
 
                     case BLACK_DEAD:
-                        pos[i].state = BoardPosState.BLACK;
+                        pos[i] = combine_to_int(get_group_id(pos[i]), BoardPosState.BLACK);
                         break;
 
                     case WHITE_DEAD:
-                        pos[i].state = BoardPosState.WHITE;
+                        pos[i] = combine_to_int(get_group_id(pos[i]), BoardPosState.WHITE);
                         break;
                 }
             }
@@ -408,7 +460,7 @@ public abstract class GoRule {
             BoardPosState from, to;
 
             try {
-                to = from = pos[x + y * size].state;
+                to = from = get_state(pos[x + y * size]);
             } catch (ArrayIndexOutOfBoundsException e) {
                 return;
             }
@@ -449,19 +501,20 @@ public abstract class GoRule {
 
         private void flood_fill(int x, int y, BoardPosState from, BoardPosState to)
         {
+            /*We need to change it to non-recursive version*/
             if (x < 0 || x >= size)
                 return;
 
             if (y < 0 || y >= size)
                 return;
 
-            if (pos[x + y * size].state == to)
+            if (get_state(pos[x + y * size]) == to)
                 return;
 
-            if (pos[x + y * size].state != from)
+            if (get_state(pos[x + y * size]) != from)
                 return;
 
-            pos[x + y * size].state = to;
+            pos[x + y * size] = combine_to_int(get_group_id(pos[x + y * size]), to);
 
             /* south */
             flood_fill(x, y + 1, from, to);
@@ -482,7 +535,7 @@ public abstract class GoRule {
             int white_count = 0, black_count = 0;
 
             for (i = 0 ; i < pos.length ; i++) {
-                switch (pos[i].state) {
+                switch (get_state(pos[i])) {
                     case BLACK:
                     case WHITE:
                     case EMPTY:
