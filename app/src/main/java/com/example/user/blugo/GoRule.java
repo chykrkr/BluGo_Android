@@ -152,30 +152,30 @@ public abstract class GoRule {
 
         private int get_grpid_new_stone(int x, int y, BoardPos spot)
         {
-            int group_id  = -1;
+            int group_id  = 0;
             int gid_l, gid_r, gid_u, gid_d;
             boolean lc, rc, uc, dc;
 
             /*  Get minimum grp_id from surrounding stones */
             group_id = gid_l = left_grp_id(x, y, spot.state);
-            lc = (gid_l >= 0)? true : false;
+            lc = (gid_l >= 1)? true : false;
 
             gid_r = right_grp_id(x, y, spot.state);
-            if ((group_id < 0) || (gid_r >=0 && gid_r < group_id))
+            if ((group_id < 1) || (gid_r >=1 && gid_r < group_id))
                 group_id = gid_r;
-            rc = (gid_r >= 0)? true : false;
+            rc = (gid_r >= 1)? true : false;
 
             gid_u = up_grp_id(x, y, spot.state);
-            if ((group_id < 0) || (gid_u >=0 && gid_u < group_id))
+            if ((group_id < 1) || (gid_u >=1 && gid_u < group_id))
                 group_id = gid_u;
-            uc = (gid_u >= 0)? true : false;
+            uc = (gid_u >= 1)? true : false;
 
             gid_d = down_grp_id(x, y, spot.state);
-            if ((group_id < 0) || (gid_d >=0 && gid_d < group_id))
+            if ((group_id < 1) || (gid_d >= 1 && gid_d < group_id))
                 group_id = gid_d;
-            dc = (gid_d >= 0)? true : false;
+            dc = (gid_d >= 1)? true : false;
 
-            if (group_id < 0) {
+            if (group_id < 1) {
                 /* New unlinked single stone */
                 group_id = get_next_grpid();
             } else {
@@ -200,7 +200,7 @@ public abstract class GoRule {
         }
 
         private int get_next_grpid() {
-            int grp_id = -1;
+            int grp_id = 0;
             int i;
 
             for (i = 0 ; i < pos.length ; i++) {
@@ -285,7 +285,7 @@ public abstract class GoRule {
             }
 
             for (BoardPos p : deadpos) {
-                p.group_id = -1;
+                p.group_id = 0;
                 p.state = BoardPosState.EMPTY;
             }
 
@@ -513,7 +513,7 @@ public abstract class GoRule {
 
     protected class BoardPos {
         BoardPosState state = BoardPosState.EMPTY;
-        int group_id = -1;
+        int group_id = 0;
 
         @Override
         protected Object clone() throws CloneNotSupportedException {
