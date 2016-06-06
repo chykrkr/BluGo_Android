@@ -183,24 +183,21 @@ public class GoControlSingle extends GoControl {
         }
 
         ArrayList<GoAction> history = rule.get_action_history();
-        GoAction last_action, current_action;
+        if (history.size() < 1)
+            return;
+
+        GoAction last_action;
         last_action = history.get(history.size() - 1);
 
 	if (!this.rule.undo()) {
 	    return;
 	}
 
-        if (history.size() > 0) {
-            current_action = history.get(history.size() - 1);
-            current_turn = current_action.player;
-
-            if (last_action.action == Action.PASS && pass_count > 0) {
-                pass_count--;
-            }
-        } else {
-            /* We are back to start of game */
-            current_turn = Player.BLACK;
+        if (last_action.action == Action.PASS && pass_count > 0) {
+            pass_count--;
         }
+
+        current_turn = last_action.player;
 
         this.callback_receiver.callback_board_state_changed();
     }

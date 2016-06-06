@@ -315,14 +315,14 @@ public class GoBoardView extends View implements GoControl.Callback {
                     case BLACK:
                         draw_stone(canvas, GoControl.Player.BLACK,
                             board_canvas_x, board_canvas_y,
-                            i / board_size, i % board_size,
+                            i % board_size, i / board_size,
                             board_canvas_w, board_canvas_h,
                             (int) board_square_size, OPAQUE_ALPHA);
                         continue;
                     case WHITE:
                         draw_stone(canvas, GoControl.Player.WHITE,
                             board_canvas_x, board_canvas_y,
-                            i / board_size, i % board_size,
+                            i % board_size, i / board_size,
                             board_canvas_w, board_canvas_h,
                             (int) board_square_size, OPAQUE_ALPHA);
                         continue;
@@ -337,7 +337,7 @@ public class GoBoardView extends View implements GoControl.Callback {
                     case WHITE_DEAD:
                         draw_stone(canvas, GoControl.Player.WHITE,
                             board_canvas_x, board_canvas_y,
-                            i / board_size, i % board_size,
+                            i % board_size, i / board_size,
                             board_canvas_w, board_canvas_h,
                             (int) board_square_size, OPAQUE_ALPHA);
                     case EMPTY_BLACK:
@@ -347,7 +347,7 @@ public class GoBoardView extends View implements GoControl.Callback {
                     case BLACK_DEAD:
                         draw_stone(canvas, GoControl.Player.BLACK,
                             board_canvas_x, board_canvas_y,
-                            i / board_size, i % board_size,
+                            i % board_size, i / board_size,
                             board_canvas_w, board_canvas_h,
                             (int) board_square_size, OPAQUE_ALPHA);
                     case EMPTY_WHITE:
@@ -356,7 +356,7 @@ public class GoBoardView extends View implements GoControl.Callback {
                 }
 
                 draw_rect(canvas, rect,  board_canvas_x, board_canvas_y,
-                    i / board_size, i % board_size,
+                    i % board_size, i / board_size,
                     board_canvas_w, board_canvas_h, (int) board_square_size);
             }
         } else {
