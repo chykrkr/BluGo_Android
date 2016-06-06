@@ -445,7 +445,11 @@ public abstract class GoRule {
                     case EMPTY_NEUTRAL:
                     case EMPTY_BLACK:
                     case EMPTY_WHITE:
-                        pos[i] = combine_to_int(get_group_id(pos[i]), BoardPosState.EMPTY);
+                        /*
+                        Set group ID to 0. We used group ID in calc mode temporarily
+                        to call find_boder function.
+                         */
+                        pos[i] = combine_to_int(0, BoardPosState.EMPTY);
                         break;
 
                     case BLACK_DEAD:
