@@ -178,9 +178,6 @@ public class GoControlSingle extends GoControl {
     @Override
     public synchronized void undo()
     {
-	ArrayList<GoRule.BoardState> timeline;
-	GoRule.BoardState state;
-
         if (calc_mode()) {
             rule.cancel_calc();
         }
