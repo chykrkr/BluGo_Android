@@ -119,4 +119,10 @@ public class GoRuleJapan extends GoRule {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
         state.cancel_calc();
     }
+
+    @Override
+    public void prepare_calc() {
+        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        state.prepare_calc();
+    }
 }

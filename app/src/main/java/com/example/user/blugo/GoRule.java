@@ -16,14 +16,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class GoRule {
     public enum BoardPosState {
-        EMPTY(0),
-        BLACK(1),
-        WHITE(2),
-        BLACK_DEAD(3),
-        WHITE_DEAD(4),
-        EMPTY_NEUTRAL(5),
-        EMPTY_BLACK(6),
-        EMPTY_WHITE(7);
+        EMPTY(0x00),
+        BLACK(0x01),
+        WHITE(0x02),
+        BLACK_DEAD(0x03),
+        WHITE_DEAD(0x04),
+        EMPTY_NEUTRAL(0x5),
+        EMPTY_BLACK(0x6),
+        EMPTY_WHITE(0x7);
 
         private final int value;
 
@@ -33,6 +33,10 @@ public abstract class GoRule {
 
         public static BoardPosState valueOf(int type)
         {
+            /*
+            Enumeration values must be sequential or else
+            ArrayIndexoutofbound exeception may be thrown.
+            */
             return (BoardPosState) BoardPosState.values()[type];
         }
 
@@ -107,17 +111,17 @@ public abstract class GoRule {
             return  (pos[x + y * size] & 0xFF) == BoardPosState.EMPTY.getValue();
         }
 
-        private int combine_to_int(int group_id, BoardPosState state)
+        private final int combine_to_int(int group_id, BoardPosState state)
         {
             return group_id << 8 | state.getValue();
         }
 
-        private int get_group_id(int value)
+        private final int get_group_id(int value)
         {
             return (value >> 8) & 0xFFFF;
         }
 
-        private BoardPosState get_state(int value)
+        private final BoardPosState get_state(int value)
         {
             /* Enumeration's actual value cannot be zero*/
             return BoardPosState.valueOf(value & 0xFF);
@@ -474,19 +478,6 @@ public abstract class GoRule {
                     to = BoardPosState.WHITE_DEAD;
                     break;
 
-                case EMPTY:
-                case EMPTY_NEUTRAL:
-                    to = BoardPosState.EMPTY_BLACK;
-                    break;
-
-                case EMPTY_BLACK:
-                    to = BoardPosState.EMPTY_WHITE;
-                    break;
-
-                case EMPTY_WHITE:
-                    to = BoardPosState.EMPTY_NEUTRAL;
-                    break;
-
                 case BLACK_DEAD:
                     to = BoardPosState.BLACK;
                     break;
@@ -494,9 +485,85 @@ public abstract class GoRule {
                 case WHITE_DEAD:
                     to = BoardPosState.WHITE;
                     break;
+
+                default:
+                    return;
             }
 
-            flood_fill(x, y, from, to);
+            HashSet<Point> empty_pos = new HashSet<>();
+            flood_fill(x, y, from, to, empty_pos);
+
+            AtomicInteger boarder_color = new AtomicInteger(0x00);
+            HashSet<Point> vhistory = new HashSet<>();
+            BoardPosState empty_from, empty_to;
+
+            for (Point p : empty_pos) {
+                empty_from = get_state(pos[p.x + p.y * size]);
+                boarder_color.set(0x00);
+                /* check border again */
+                /*
+                Because we don't have additional information to stop recursive function call,
+                we provide information for already visited point as a function parameter.
+                 */
+                vhistory.clear();
+                find_border(p.x, p.y, boarder_color,vhistory);
+
+                if (boarder_color.get() == 0x01) {
+                    flood_fill(p.x, p.y, empty_from, BoardPosState.EMPTY_WHITE);
+                } else if (boarder_color.get() == 0x02) {
+                    flood_fill(p.x, p.y, empty_from, BoardPosState.EMPTY_BLACK);
+                } else
+                    flood_fill(p.x, p.y, empty_from, BoardPosState.EMPTY_NEUTRAL);
+            }
+
+            /* Release memory */
+            vhistory = null;
+        }
+
+        /* Do flood_fill and find surrounding empty points */
+        private void flood_fill(int x, int y, BoardPosState from, BoardPosState to, HashSet<Point> empty_pos)
+        {
+            BoardPosState cur_state;
+
+            /*We need to change it to non-recursive version*/
+            if (x < 0 || x >= size)
+                return;
+
+            if (y < 0 || y >= size)
+                return;
+
+            cur_state = get_state(pos[x + y * size]);
+
+            if (empty_pos != null) {
+                switch (cur_state) {
+                    case EMPTY:
+                    case EMPTY_NEUTRAL:
+                    case EMPTY_WHITE:
+                    case EMPTY_BLACK:
+                        empty_pos.add(new Point(x, y));
+                        break;
+                }
+            }
+
+            if (cur_state == to)
+                return;
+
+            if (cur_state != from)
+                return;
+
+            pos[x + y * size] = combine_to_int(get_group_id(pos[x + y * size]), to);
+
+            /* south */
+            flood_fill(x, y + 1, from, to, empty_pos);
+
+            /* north */
+            flood_fill(x, y - 1, from, to, empty_pos);
+
+            /* west */
+            flood_fill(x - 1, y, from, to, empty_pos);
+
+            /* east */
+            flood_fill(x + 1, y, from, to, empty_pos);
         }
 
         private void flood_fill(int x, int y, BoardPosState from, BoardPosState to)
@@ -527,6 +594,138 @@ public abstract class GoRule {
 
             /* east */
             flood_fill(x + 1, y, from, to);
+        }
+
+        private void find_border(int x, int y, AtomicInteger color, HashSet<Point> vhistory)
+        {
+            BoardPosState state;
+            Point p;
+
+            p = new Point(x, y);
+            /* It's aready visited point.
+            Don't do anything to prevent infinite recursion
+             */
+            if (vhistory.contains(p))
+                return;
+
+            vhistory.add(p);
+
+            if (x < 0 || x >= size || y < 0 || y >= size)
+                return;
+
+            Log.d("SEARCH", "Searching: " + x + "," + y);
+
+            state = get_state(pos[x + y * size]);
+
+            switch (state) {
+                case WHITE:
+                case BLACK_DEAD:
+                    color.set(color.get() | 0x01);
+                    break;
+                case BLACK:
+                case WHITE_DEAD:
+                    color.set(color.get() | 0x02);
+                    break;
+            }
+
+            switch (state) {
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                case EMPTY_WHITE:
+                case EMPTY_BLACK:
+                    break;
+
+                default:
+                    /* If it's not empty */
+                    return;
+            }
+
+            /* Apply recursively for each direction of up, down, left, right */
+            find_border(x - 1, y, color, vhistory);
+            find_border(x + 1, y, color, vhistory);
+            find_border(x, y - 1, color, vhistory);
+            find_border(x, y + 1, color, vhistory);
+        }
+
+        private void find_border(int x, int y, int group_id, AtomicInteger color)
+        {
+            int cur_group_id;
+            BoardPosState state;
+
+            if (x < 0 || x >= size || y < 0 || y >= size)
+                return;
+
+            cur_group_id = get_group_id(pos[x + y * size]);
+
+            if (cur_group_id == group_id)
+                return;
+
+            state = get_state(pos[x + y * size]);
+
+            switch (state) {
+                case WHITE:
+                case BLACK_DEAD:
+                    color.set(color.get() | 0x01);
+                    break;
+                case BLACK:
+                case WHITE_DEAD:
+                    color.set(color.get() | 0x02);
+                    break;
+            }
+
+            switch (state) {
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                case EMPTY_WHITE:
+                case EMPTY_BLACK:
+                    break;
+
+                default:
+                    /* If it's not empty */
+                    return;
+            }
+
+            /* change group id */
+            pos[x + y * size] = combine_to_int(group_id, get_state(pos[x + y * size]));
+
+            /* Apply recursively for each direction of up, down, left, right */
+            find_border(x - 1, y, group_id, color);
+            find_border(x + 1, y, group_id, color);
+            find_border(x, y - 1, group_id, color);
+            find_border(x, y + 1, group_id, color);
+        }
+
+        /* Roughly determine owner of empty space */
+        public void prepare_calc()
+        {
+            /* find empty space who's group is 0 */
+            int i;
+            /*
+                0x00 : MET NOTHING -> UNDETERMINED.
+                0x01 : MET ONLY WHITE -> Belongs to white territory
+                0x02 : MET BLACK -> Belongs to black territory
+                0x03 : MET BOTH -> UNDETERMINED.
+                */
+            AtomicInteger boarder_color = new AtomicInteger(0x00);
+
+            for (i = 0 ; i < pos.length ; i++) {
+                if (get_group_id(pos[i]) != 0)
+                    continue;
+
+                if (get_state(pos[i]) != BoardPosState.EMPTY)
+                    continue;
+
+                boarder_color.set(0x00);
+
+                /* empty space will have respective group id */
+                find_border(i % size, i / size, get_next_grpid(), boarder_color);
+
+                if (boarder_color.get() == 0x01) {
+                    flood_fill(i % size, i / size, get_state(pos[i]), BoardPosState.EMPTY_WHITE);
+                } else if (boarder_color.get() == 0x02) {
+                    flood_fill(i % size, i / size, get_state(pos[i]), BoardPosState.EMPTY_BLACK);
+                }
+            }
         }
 
         public void get_score(AtomicInteger white, AtomicInteger black)
@@ -589,6 +788,7 @@ public abstract class GoRule {
     public abstract void pass(GoControl.Player next_turn);
     public abstract boolean undo();
     public abstract void cancel_calc();
+    public abstract void prepare_calc();
 
     public abstract void get_dead(AtomicInteger white, AtomicInteger black);
     public abstract void get_score(AtomicInteger white, AtomicInteger black);

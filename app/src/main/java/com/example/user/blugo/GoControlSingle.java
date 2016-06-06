@@ -158,7 +158,7 @@ public class GoControlSingle extends GoControl {
     public synchronized void pass() {
         int pass;
 
-        if (pass_count >= MAX_PASS_COUNT ) {
+        if (calc_mode()) {
             return;
         }
 
@@ -169,7 +169,10 @@ public class GoControlSingle extends GoControl {
 
         pass_count++;
 
-        /* calc territory */
+        /* prepare calc territory */
+        if (calc_mode()) {
+            rule.prepare_calc();
+        }
 
         if (callback_receiver != null)
             callback_receiver.callback_board_state_changed();
