@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:paddingBottom="0dp"
+    android:paddingLeft="0dp"
+    android:paddingRight="0dp"
+    android:paddingTop="0dp"
+    android:background="#000000"
+    tools:context="com.example.user.blugo.ReviewGameActivity"
+    android:weightSum="1">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.28">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Variation"
+            android:id="@+id/button12"
+            android:textSize="11dp"
+            android:onClick="try_varation"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/text_info"
+            android:textColor="#ffffff"
+            android:textSize="20dp"/>
+
+    </LinearLayout>
+
+    <com.example.user.blugo.GoBoardView
+        android:layout_width="wrap_content"
+        android:layout_height="330dp"
+        android:id="@+id/go_board_view"
+        app:exampleDrawable="@drawable/board"
+        app:exampleString="Hello, GoBoardView"
+        android:layout_margin="0dp"
+        android:layout_weight="0.69"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/text_pos"
+        android:textColor="#ffffff"
+        android:layout_gravity="center_horizontal"
+        android:textSize="20dp"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="&lt;"
+            android:id="@+id/button13"
+            android:textColor="#ffffff"
+            android:background="#000000"
+            android:textColorHighlight="#f6fe01"
+            android:onClick="goto_prev_move"/>
+
+        <SeekBar
+            android:layout_width="279dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/seek_pos"
+            android:layout_weight="0.34"
+            android:max="100"
+            android:layout_alignBottom="@+id/button14"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_columnSpan="4"
+            android:layout_gravity="center"
+            android:indeterminate="false"/>
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=">"
+            android:id="@+id/button14"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_row="0"
+            android:layout_column="9"
+            android:layout_gravity="right|top"
+            android:textColor="#ffffff"
+            android:background="#000000"
+            android:textColorHighlight="#f6fe01"
+            android:onClick="goto_next_move"/>
+    </FrameLayout>
+
+</LinearLayout>

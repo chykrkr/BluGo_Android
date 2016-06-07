@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">BluGo</string>
+    <string name="title_activity_review_game">ReviewGameActivity</string>
 </resources>

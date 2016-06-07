@@ -17,7 +17,13 @@ public class GoRuleJapan extends GoRule {
 
     GoRuleJapan()
     {
+        /* Always add single empty board */
         new_timeline.add(new NewBoardState());
+    }
+
+    GoRuleJapan(NewBoardState initial_time_line)
+    {
+        new_timeline.add(initial_time_line);
     }
 
     @Override
@@ -30,6 +36,11 @@ public class GoRuleJapan extends GoRule {
     public ArrayList<BoardPos> get_calc_info() {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
         return state.get_calc_info();
+    }
+
+    @Override
+    public ArrayList<NewBoardState> get_time_line() {
+        return new_timeline;
     }
 
     @Override

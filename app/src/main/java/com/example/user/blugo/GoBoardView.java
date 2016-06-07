@@ -14,6 +14,7 @@ import android.graphics.drawable.shapes.OvalShape;
 import android.graphics.drawable.shapes.PathShape;
 import android.graphics.drawable.shapes.RectShape;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.ColorInt;
 import android.text.TextPaint;
@@ -51,6 +52,16 @@ public class GoBoardView extends View implements GoControl.Callback {
     private float board_square_size = -1;
 
     private GoControl go_control = null;
+
+    public boolean isView_only_mode() {
+        return view_only_mode;
+    }
+
+    public void setView_only_mode(boolean view_only_mode) {
+        this.view_only_mode = view_only_mode;
+    }
+
+    private boolean view_only_mode = false;
 
     public GoControl getGo_control() {
         return go_control;
@@ -129,6 +140,9 @@ public class GoBoardView extends View implements GoControl.Callback {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         Point p;
+
+        if (view_only_mode)
+            return super.onTouchEvent(event);
 
         if (go_control == null)
             return true;
@@ -369,16 +383,32 @@ public class GoBoardView extends View implements GoControl.Callback {
                 draw_stone(canvas, p.player, board_canvas_x, board_canvas_y, p.where.x, p.where.y, board_canvas_w, board_canvas_h, (int) board_square_size, OPAQUE_ALPHA);
             }
 
-            draw_ghost = go_control.getCurrent_turn() == GoControl.Player.BLACK || go_control.getCurrent_turn() == GoControl.Player.WHITE;
-            draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < board_size);
-            draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < board_size);
-            draw_ghost = draw_ghost && !stone_pos.contains(new GoControl.GoAction(ghost_pos.x, ghost_pos.y));
-            draw_ghost = draw_ghost && !go_control.calc_mode();
+            if (view_only_mode) {
+                draw_ghost = false;
+            } else {
+                draw_ghost = go_control.getCurrent_turn() == GoControl.Player.BLACK || go_control.getCurrent_turn() == GoControl.Player.WHITE;
+                draw_ghost = draw_ghost && (ghost_pos.x >= 0 && ghost_pos.y < board_size);
+                draw_ghost = draw_ghost && (ghost_pos.y >= 0 && ghost_pos.y < board_size);
+                draw_ghost = draw_ghost && !stone_pos.contains(new GoControl.GoAction(ghost_pos.x, ghost_pos.y));
+                draw_ghost = draw_ghost && !go_control.calc_mode();
+            }
         }
 
         /* draw ghost */
         if (draw_ghost) {
             draw_stone(canvas, go_control.getCurrent_turn(), board_canvas_x, board_canvas_y, ghost_pos.x, ghost_pos.y, board_canvas_w, board_canvas_h, (int) board_square_size, GHOST_ALPHA);
+        }
+
+        Point cur_coord = go_control.get_cur_coord();
+
+        if (view_only_mode && cur_coord != null) {
+            ShapeDrawable red_dot = new ShapeDrawable(new OvalShape());
+            red_dot.getPaint().setColor(0xffff0000);
+
+            draw_reddot(canvas, red_dot,
+                board_canvas_x, board_canvas_y, cur_coord.x, cur_coord.y,
+                board_canvas_w, board_canvas_h, (int) board_square_size,
+                (int) (board_square_size / 5));
         }
         /*
         draw_stone(canvas, 0, x, y, 2, 2, width, height, (int) square);
@@ -389,9 +419,12 @@ public class GoBoardView extends View implements GoControl.Callback {
         */
 
         Message msg;
-        GoBoardActivity parent = (GoBoardActivity) this.getContext();
-        msg = Message.obtain(parent.msg_handler, GoBoardActivity.MSG_INFO_CHANGED, "msg");
-        parent.msg_handler.sendMessage(msg);
+        GoBoardViewListener parent = (GoBoardViewListener) this.getContext();
+        Handler h;
+
+        h = parent.get_msg_handler();
+        msg = Message.obtain(h, GoBoardViewListener.MSG_VIEW_FULLY_DRAWN, "msg");
+        h.sendMessage(msg);
     }
 
     private void draw_stone(Canvas canvas, GoControl.Player stone_color, int x, int y, int i, int j,
@@ -435,6 +468,26 @@ public class GoBoardView extends View implements GoControl.Callback {
         board_size = go_control.getBoardSize();
 
         tmph = tmpw = square/5;
+
+        tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
+        tmpy = y + square/2 + j * (height -  square)/(board_size - 1);
+        s.setBounds(tmpx - tmpw, tmpy - tmph, tmpx + tmpw, tmpy + tmph);
+        s.draw(canvas);
+    }
+
+    private void draw_reddot(Canvas canvas, ShapeDrawable s,
+                           int x, int y, int i, int j,
+                           int width, int height, int square, int shape_size)
+    {
+        int tmpx, tmpy, tmpw, tmph;
+        int board_size;
+
+        if (go_control == null)
+            return;
+
+        board_size = go_control.getBoardSize();
+
+        tmph = tmpw = shape_size;
 
         tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
         tmpy = y + square/2 + j * (height -  square)/(board_size - 1);

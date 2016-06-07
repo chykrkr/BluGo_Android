@@ -12,25 +12,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GoControlSingle extends GoControl {
     private int board_size = 19;
-    private Player current_turn = Player.BLACK;
-    private GoRule rule;
+    protected Player current_turn = Player.BLACK;
+    protected GoRule rule;
     private float komi = 6.5f;
     private int pass_count = 0;
     private static final int MAX_PASS_COUNT = 2;
+    private int start_turn = 0;
 
     GoControlSingle() {
-        this(19, Player.BLACK, null, new GoRuleJapan());
+        this(19, Player.BLACK, null, new GoRuleJapan(),0);
     }
 
     GoControlSingle(Callback callback_receiver) {
-        this(19, Player.BLACK, callback_receiver, new GoRuleJapan());
+        this(19, Player.BLACK, callback_receiver, new GoRuleJapan(), 0);
     }
 
-    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule) {
+    GoControlSingle(int board_size, Player current_turn, GoRule rule) {
+        this(board_size, current_turn, null, rule, 0);
+    }
+
+    GoControlSingle(int board_size, Player current_turn, GoRule rule, int start_turn) {
+        this(board_size, current_turn, null, rule, start_turn);
+    }
+
+    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule, int start_turn) {
         this.board_size = board_size;
         this.current_turn = current_turn;
         this.callback_receiver = callback_receiver;
         this.rule = rule;
+        this.start_turn = start_turn;
     }
 
     @Override
@@ -223,7 +233,7 @@ public class GoControlSingle extends GoControl {
         }
 
         ArrayList<GoAction> history = rule.get_action_history();
-        info.turn_num = history.size() + 1;
+        info.turn_num = history.size() + 1 + start_turn;
 
         return info;
     }
@@ -246,6 +256,12 @@ public class GoControlSingle extends GoControl {
             return true;
 
         return false;
+    }
+
+    @Override
+    public Point get_cur_coord()
+    {
+        return null;
     }
 
     @Override

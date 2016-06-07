@@ -142,6 +142,7 @@ public abstract class GoControl {
     public abstract boolean load_sgf(String text);
     public abstract boolean calc_mode();
     public abstract ArrayList<GoRule.BoardPos> get_calc_info();
+    public abstract Point get_cur_coord();
 
     public abstract void pass();
     public abstract void undo();

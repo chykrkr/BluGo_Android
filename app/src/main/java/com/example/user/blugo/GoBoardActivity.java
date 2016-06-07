@@ -2,6 +2,7 @@ package com.example.user.blugo;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -19,15 +20,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 
-public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, Handler.Callback {
+public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, Handler.Callback, GoBoardViewListener {
     private GoBoardView gv;
     private TextView txt_info;
-    private GoControl single_game = new GoControlSingle();
+    private GoControl single_game;
     private ProgressDialog progressBar;
     private String sgf_string = null;
     private File file;
-    public static final int MSG_LOAD_END = 1;
-    public static final int MSG_INFO_CHANGED = 2;
+    public static final int MSG_LOAD_END = GoBoardViewListener.MSG_MAX + 1;
 
     public Handler msg_handler = new Handler(this);
 
@@ -63,9 +63,27 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        GoRule rule;
+        NewBoardState state;
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_go_board);
+
+        Intent intent = getIntent();
+        Bundle bundle;
+
+        bundle = intent.getExtras();
+
+        if (bundle == null) {
+            single_game = new GoControlSingle();
+        } else {
+            state = bundle.getParcelable(ReviewGameActivity.MSG_BOARD_STATE);
+            int bw = bundle.getInt(ReviewGameActivity.MSG_CURRENT_TURN);
+            int start_turn = bundle.getInt(ReviewGameActivity.MSG_START_TURNNO);
+            single_game = new GoControlSingle(state.size,
+                bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
+                new GoRuleJapan(state), start_turn);
+        }
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
         gv.setGo_control(single_game);
@@ -96,8 +114,6 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
         f.setExtension("sgf");
         f.setFileListener(this);
         f.showDialog();
-
-
     }
 
     public void save_SGF(View view)
@@ -192,11 +208,16 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
                 progressBar.dismiss();
                 return true;
 
-            case MSG_INFO_CHANGED:
+            case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
                 txt_info.setText(get_info_text());
                 return true;
         }
 
         return false;
+    }
+
+    @Override
+    public Handler get_msg_handler() {
+        return msg_handler;
     }
 }

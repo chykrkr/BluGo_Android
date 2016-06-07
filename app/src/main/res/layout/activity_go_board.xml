@@ -65,13 +65,6 @@
             android:id="@+id/button4"
 	    android:onClick="save_SGF"/>
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Load SGF"
-            android:id="@+id/button5"
-	    android:onClick="load_SGF"/>
-
     </LinearLayout>
 
 </LinearLayout>
