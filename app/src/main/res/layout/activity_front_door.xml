@@ -29,7 +29,8 @@
         android:text="Wait game request"
         android:id="@+id/button8"
         android:layout_below="@+id/button7"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:onClick="wait_game_request"/>
 
     <Button
         android:layout_width="wrap_content"
@@ -40,7 +41,8 @@
         android:layout_alignLeft="@+id/button8"
         android:layout_alignStart="@+id/button8"
         android:layout_alignRight="@+id/button8"
-        android:layout_alignEnd="@+id/button8"/>
+        android:layout_alignEnd="@+id/button8"
+        android:onClick="request_play"/>
 
     <Button
         android:layout_width="wrap_content"

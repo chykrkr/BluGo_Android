@@ -30,17 +30,21 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity
-            android:name=".GoBoardActivity">
+        <activity android:name=".GoBoardActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".FrontDoorActivity"/>
         </activity>
-        <activity android:name=".ReviewGameActivity"
-		  android:parentActivityName=".FrontDoorActivity">
+        <activity
+            android:name=".ReviewGameActivity"
+            android:parentActivityName=".FrontDoorActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".FrontDoorActivity"/>
+        </activity>
+        <activity android:name=".PlayRequestActivity">
+        </activity>
+        <activity android:name=".BluetoothGameActivity">
         </activity>
     </application>
 
