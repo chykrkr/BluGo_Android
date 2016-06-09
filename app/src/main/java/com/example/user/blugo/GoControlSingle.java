@@ -165,11 +165,11 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
-    public synchronized void pass() {
+    public synchronized boolean pass() {
         int pass;
 
         if (calc_mode()) {
-            return;
+            return false;
         }
 
         Player next_turn = (current_turn == Player.WHITE)? Player.BLACK : Player.WHITE;
@@ -186,6 +186,8 @@ public class GoControlSingle extends GoControl {
 
         if (callback_receiver != null)
             callback_receiver.callback_board_state_changed();
+
+        return true;
     }
 
     @Override

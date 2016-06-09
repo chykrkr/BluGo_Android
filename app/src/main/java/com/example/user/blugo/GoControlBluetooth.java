@@ -13,9 +13,17 @@ public class GoControlBluetooth extends GoControlSingle{
         this.my_turn = my_turn;
     }
 
+    private boolean _isMyTurn()
+    {
+        if (calc_mode())
+            return true;
+
+        return this.current_turn == my_turn;
+    }
+
     @Override
     public synchronized boolean isMyTurn() {
-        return this.current_turn == my_turn;
+        return _isMyTurn();
     }
 
     @Override
@@ -40,13 +48,21 @@ public class GoControlBluetooth extends GoControlSingle{
     }
 
     @Override
-    public synchronized void pass() {
-        BlutoothCommThread comm = BlutoothCommThread.getInstance();
+    public synchronized boolean pass() {
+        BlutoothCommThread comm;
 
-        super.pass();
+        if (!_isMyTurn())
+            return false;
+
+        if (!super.pass())
+            return false;
+
+        comm = BlutoothCommThread.getInstance();
         comm.write(BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.PASS,
             null
         ));
+
+        return true;
     }
 
     public synchronized void op_pass() {

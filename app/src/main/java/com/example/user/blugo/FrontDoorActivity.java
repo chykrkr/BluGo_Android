@@ -87,11 +87,6 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.wait_dialog, null);
 
-        /* goto discoverable mode */
-        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-        startActivity(discoverableIntent);
-
         final Dialog dialog;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -126,6 +121,14 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         dialog.setTitle("Waiting request ...");
         dialog.setOnDismissListener(this);
         dialog.show();
+    }
+
+    public void enable_discover(View view)
+    {
+        /* goto discoverable mode */
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        startActivity(discoverableIntent);
     }
 
     public void request_play(View view)

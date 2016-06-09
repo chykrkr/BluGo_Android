@@ -10,61 +10,74 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".FrontDoorActivity">
 
-    <Button
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Single Game"
-        android:id="@+id/button7"
-        android:layout_marginTop="132dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignRight="@+id/button8"
-        android:layout_alignEnd="@+id/button8"
-        android:layout_alignLeft="@+id/button8"
-        android:layout_alignStart="@+id/button8"
-        android:onClick="start_single_game"/>
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Wait game request"
-        android:id="@+id/button8"
-        android:layout_below="@+id/button7"
-        android:layout_centerHorizontal="true"
-        android:onClick="wait_game_request"/>
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Review game"
+            android:id="@+id/button10"
+            android:onClick="load_SGF"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Request game"
-        android:id="@+id/button9"
-        android:layout_below="@+id/button8"
-        android:layout_alignLeft="@+id/button8"
-        android:layout_alignStart="@+id/button8"
-        android:layout_alignRight="@+id/button8"
-        android:layout_alignEnd="@+id/button8"
-        android:onClick="request_play"/>
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Single Game"
+            android:id="@+id/button7"
+            android:onClick="start_single_game"
+            android:layout_below="@+id/button10"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Review game"
-        android:id="@+id/button10"
-        android:layout_alignBottom="@+id/button7"
-        android:layout_alignRight="@+id/button7"
-        android:layout_alignEnd="@+id/button7"
-        android:layout_marginBottom="53dp"
-        android:layout_alignLeft="@+id/button7"
-        android:layout_alignStart="@+id/button7"
-	android:onClick="load_SGF"/>
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Enable discover"
+            android:id="@+id/button16"
+            android:layout_below="@+id/button8"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:onClick="enable_discover"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Settings"
-        android:id="@+id/button11"
-        android:layout_below="@+id/button9"
-        android:layout_alignLeft="@+id/button9"
-        android:layout_alignStart="@+id/button9"
-        android:layout_alignRight="@+id/button9"
-        android:layout_alignEnd="@+id/button9"/>
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Wait game request"
+            android:id="@+id/button8"
+            android:onClick="wait_game_request"
+            android:layout_below="@+id/button7"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"/>
+
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Request game"
+            android:id="@+id/button9"
+            android:onClick="request_play"
+            android:layout_below="@+id/button16"
+            android:layout_alignRight="@+id/button10"
+            android:layout_alignEnd="@+id/button10"
+            android:layout_gravity="center_horizontal"/>
+
+        <Button
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:id="@+id/button11"
+            android:layout_below="@+id/button9"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"/>
+
+    </LinearLayout>
+
 </RelativeLayout>

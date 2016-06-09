@@ -144,7 +144,7 @@ public abstract class GoControl {
     public abstract ArrayList<GoRule.BoardPos> get_calc_info();
     public abstract Point get_cur_coord();
 
-    public abstract void pass();
+    public abstract boolean pass();
     public abstract void undo();
 
     public abstract GoInfo get_info();
