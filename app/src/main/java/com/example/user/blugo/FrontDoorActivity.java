@@ -16,9 +16,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.Random;
 
 public class FrontDoorActivity extends AppCompatActivity implements FileChooser.FileSelectedListener,
     Handler.Callback, DialogInterface.OnDismissListener, GoMessageListener {
@@ -31,9 +33,11 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     private BluetoothAdapter mBluetoothAdapter = null;
 
-    private Dialog dialog;
+    private Dialog dialog, dialog_rq_confirm;
 
     private boolean connection_established = false;
+
+    private GoPlaySetting setting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +46,11 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Light_Dialog);
+            dialog_rq_confirm = new Dialog(this,
+                android.R.style.Theme_DeviceDefault_Light_Dialog);
         } else {
             dialog = new Dialog(this);
+            dialog_rq_confirm = new Dialog(this);
         }
 
         connection_established = false;
@@ -148,16 +155,22 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     @Override
     public boolean handleMessage(Message msg) {
+        Random r;
+        String m;
+        BlutoothServerThread server;
+        int my_color;
+        Intent intent;
+
         switch (msg.what) {
             case FRONTDOORACTIVITY_MSG_LOAD_END:
-                Intent intent = new Intent(this, ReviewGameActivity.class);
+                intent = new Intent(this, ReviewGameActivity.class);
                 intent.putExtra(EXTRA_MESSAGE, (String) msg.obj);
                 startActivity(intent);
 		/* sgf_string = null;*/
                 return true;
 
             case GoMessageListener.BLUTOOTH_SERVER_SOCKET_ERROR:
-                BlutoothServerThread server = BlutoothServerThread.getInstance();
+                server = BlutoothServerThread.getInstance();
                 if (server != null) {
                     server.cancel();
                     try {
@@ -165,6 +178,36 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                     } catch (InterruptedException e) {}
                     server = null;
                 }
+                break;
+
+            case GoMessageListener.BLUTOOTH_COMM_ACCEPTED_REQUEST:
+                if (setting.wb == 0) {
+                    /* random */
+                    r = new Random();
+                    my_color = r.nextInt(100) % 2;
+                } else if (setting.wb == 1) {
+                    /* opponent want black */
+                    my_color = 1;
+                } else {
+                    /* opponent want white */
+                    my_color = 0;
+                }
+
+                Log.d("SERVER", "REQUEST_PLAY RECEIVED");
+                server = BlutoothServerThread.getInstance();
+                m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY_ACK,
+                    new Integer(my_color == 0 ? 1 : 0));
+                server.get_connected().write(m);
+
+                setting.wb = my_color;
+
+                intent = new Intent(this, BluetoothGameActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(GoMessageListener.GAME_SETTING_MESSAGE, setting);
+                intent.putExtras(bundle);
+
+                startActivity(intent);
+
                 break;
 
             case GoMessageListener.BLUTOOTH_COMM_MSG:
@@ -177,7 +220,6 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     private void handle_comm_message(BlutoothMsgParser.MsgParsed msg)
     {
-        String m;
         switch (msg.type) {
             case REQUEST_PLAY:
                 BlutoothServerThread server = BlutoothServerThread.getInstance();
@@ -185,16 +227,87 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                 if (server == null)
                     break;
 
-                Log.d("SERVER", "REQUEST_PLAY RECEIVED");
-                m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY_ACK,
-                    null);
-                server.get_connected().write(m);
+                setting = (GoPlaySetting) msg.content;
+
+
 
                 dialog.dismiss();
 
-                Intent intent = new Intent(this, BluetoothGameActivity.class);
-                intent.putExtra(GoMessageListener.STONE_COLOR_MESSAGE, 0); /* Server is black */
-                startActivity(intent);
+                dialog_rq_confirm.setContentView(R.layout.request_confirm);
+                dialog_rq_confirm.setTitle("Game request arrived");
+                dialog_rq_confirm.setCanceledOnTouchOutside(false);
+
+                Button accept_button = (Button) dialog_rq_confirm.findViewById(R.id.btn_accept);
+                Button reject_button = (Button) dialog_rq_confirm.findViewById(R.id.btn_reject);
+
+                TextView tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_rule);
+                tmp.setText(setting.rule == 0 ? "Japanese" : "Chinese");
+
+                tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_handicap);
+                tmp.setText(setting.handicap + "");
+
+                tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_komi);
+                tmp.setText(setting.komi + "");
+
+                tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_size);
+                tmp.setText(setting.size + "x" + setting.size);
+
+                tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_your_color);
+
+                if (setting.wb == 0) {
+                    tmp.setText("Random");
+                } else if (setting.wb == 1) {
+                    tmp.setText("White");
+                } else if (setting.wb == 2) {
+                    tmp.setText("Black");
+                }
+
+                accept_button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Message msg = Message.obtain(msg_handler,
+                            GoMessageListener.BLUTOOTH_COMM_ACCEPTED_REQUEST,
+                            "connection success");
+                        msg_handler.sendMessage(msg);
+                        dialog_rq_confirm.dismiss();
+                    }
+                });
+
+                reject_button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        BlutoothServerThread server = BlutoothServerThread.getInstance();
+                        String m;
+                        m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY_ACK,
+                            -1);
+                        server.get_connected().write(m);
+
+                        BlutoothClientThread client;
+
+                        /* stop communicator */
+                        BlutoothCommThread comm;
+                        comm = BlutoothCommThread.getInstance();
+                        if (comm != null) {
+                            comm.cancel();
+                            try {
+                                comm.join();
+                            } catch (InterruptedException e) {}
+                        }
+
+                        /* stop server */
+                        server = BlutoothServerThread.getInstance();
+                        if (server != null) {
+                            server.cancel();
+                            try {
+                                server.join();
+                            } catch (InterruptedException e) {}
+                        }
+                        dialog_rq_confirm.dismiss();
+                    }
+                });
+
+                dialog_rq_confirm.show();
+
                 break;
         }
     }

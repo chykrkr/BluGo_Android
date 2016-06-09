@@ -2,6 +2,7 @@ package com.example.user.blugo;
 
 import android.graphics.Point;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +55,26 @@ public class BlutoothMsgParser {
 
     private final Pattern command = Pattern.compile("(?m)\\[(.*?)\\](.*)");
     private final Pattern coord = Pattern.compile("(?m)([a-z])([a-z])");
+    /*[RQ_PLAY]r=j,komi=6.5,size=19,wb=0,handicap=0*/
+    private final Pattern gsetting =
+        Pattern.compile("(?m)r=([jc]),komi=([0-9.]+),size=(\\d+),wb=(\\d+),handicap=(\\d+)");
+
+    public static String make_request_play_message(Object opt)
+    {
+        /*
+        Example message.
+        [RQ_PLAY]r=j,komi=6.5,size=19,wb=0,handicap=0
+        */
+        String message = "";
+
+        GoPlaySetting setting = (GoPlaySetting) opt;
+
+        message += String.format("r=%c,", setting.rule == 0 ? 'j' : 'c');
+        message += String.format("komi=%.1f,size=%d,wb=%d,handicap=%d",
+            setting.komi, setting.size, setting.wb, setting.handicap);
+
+        return message;
+    }
 
     public static String make_message(MsgType type, Object opt)
     {
@@ -67,6 +88,14 @@ public class BlutoothMsgParser {
             case PUTSTONE:
                 Point p = (Point) opt;
                 message += String.format("%c%c", (char) (p.x + 'a'), (char) (p.y + 'a'));
+                break;
+
+            case REQUEST_PLAY:
+                message += make_request_play_message(opt);
+                break;
+
+            case REQUEST_PLAY_ACK:
+                message += ((Integer) opt).toString();
                 break;
         }
 
@@ -94,6 +123,30 @@ public class BlutoothMsgParser {
         p.y = (int) (y.charAt(0) - 'a');
 
         return p;
+    }
+
+    private Object parse_request_play(String opt)
+    {
+        Matcher m = gsetting.matcher(opt);
+        GoPlaySetting setting = new GoPlaySetting();
+        String tmp;
+
+        if (!m.find())
+            return null;
+
+        tmp = m.group(1);
+        setting.rule = tmp.charAt(0) == 'c'? 1 : 0;
+        setting.komi = Float.parseFloat(m.group(2));
+        setting.size = Integer.parseInt(m.group(3));
+        setting.wb = Integer.parseInt(m.group(4));
+        setting.handicap = Integer.parseInt(m.group(5));
+
+        return setting;
+    }
+
+    private Object parse_request_play_ack(String opt)
+    {
+        return Integer.parseInt(opt);
     }
 
     public MsgParsed parse(String message)
@@ -131,10 +184,12 @@ public class BlutoothMsgParser {
 
             case REQUEST_PLAY_ACK:
                 parsed.type = type;
+                parsed.content = parse_request_play_ack(opt);
                 break;
 
             case REQUEST_PLAY:
                 parsed.type = type;
+                parsed.content = parse_request_play(opt);
                 break;
 
             case PASS:

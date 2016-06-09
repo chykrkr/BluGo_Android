@@ -1,6 +1,7 @@
 package com.example.user.blugo;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -18,15 +19,18 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class PlayRequestActivity extends AppCompatActivity implements GoMessageListener,
-    Handler.Callback {
+    Handler.Callback, AdapterView.OnItemSelectedListener {
     public final static int REQUEST_COARSE_LOCATION = 2;
 
     private ListView dev_listview;
@@ -37,6 +41,10 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     private ProgressBar pbar_discover;
     public Handler msg_handler = new Handler(this);
 
+    private Spinner sp_rule, sp_board_size, sp_wb, sp_handicap;
+    private EditText komi;
+
+    private ProgressDialog load_progress = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +76,14 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
                         PlayRequestActivity.this);
                     client.start();
 
+                    /* pop-up wait dialog */
+                    load_progress = new ProgressDialog(PlayRequestActivity.this);
+                    load_progress.setCancelable(false);
+                    load_progress.setMessage("Waiting response ...");
+                    load_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                    load_progress.setProgress(0);
+                    load_progress.setMax(100);
+                    load_progress.show();
                 }
             }
         );
@@ -77,6 +93,92 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         listBluetoothDevice();
+
+        /* rule */
+        sp_rule = (Spinner) findViewById(R.id.sp_rule);
+        List<String> rules = new ArrayList<String>();
+        rules.add("JAPANESE");
+        rules.add("CHINESE");
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, rules);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_rule.setAdapter(adapter);
+        sp_rule.setOnItemSelectedListener(this);
+
+        /* size : 19, 17, 15, 13, 11, 9, 7, 5, 3 */
+        sp_board_size = (Spinner) findViewById(R.id.sp_board_size);
+        List<Integer> bd_size = new ArrayList<Integer>();
+
+        for (int i = 19 ; i >= 3 ; i -= 2) {
+            bd_size.add(i);
+        }
+
+        ArrayAdapter<Integer> bd_size_adapter = new ArrayAdapter<Integer>(this, android.R.layout.simple_spinner_item, bd_size);
+        bd_size_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_board_size.setAdapter(bd_size_adapter);
+        sp_board_size.setOnItemSelectedListener(this);
+
+        /* w/b : random, black, white */
+        sp_wb = (Spinner) findViewById(R.id.sp_wb);
+        List<String> wb_choose = new ArrayList<>();
+        wb_choose.add("Random");
+        wb_choose.add("Black");
+        wb_choose.add("White");
+        ArrayAdapter<String> wb_choose_adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, wb_choose);
+        wb_choose_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_wb.setAdapter(wb_choose_adapter);
+
+        /* Handicap : 2, 3, 4, 5, 6, 7, 8, 9, 13, 16, 25 */
+        sp_handicap = (Spinner) findViewById(R.id.sp_handicap);
+        List<Integer> handicap = new ArrayList<>();
+        handicap.add(0);
+        for (int i = 2 ; i <= 9 ; i++)
+            handicap.add(i);
+        handicap.add(13);
+        handicap.add(16);
+        handicap.add(25);
+        ArrayAdapter<Integer> handicap_adapter = new ArrayAdapter<Integer>(this, android.R.layout.simple_spinner_item, handicap);
+        bd_size_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_handicap.setAdapter(handicap_adapter);
+        sp_handicap.setOnItemSelectedListener(this);
+
+        komi = (EditText) findViewById(R.id.num_komi);
+
+        reset_default(null);
+    }
+
+    public void reset_default(View view)
+    {
+        sp_rule.setSelection(0, false);
+
+        /* default 19x19 */
+        sp_board_size.setSelection(0);
+
+        /* Random */
+        sp_wb.setSelection(0);
+
+        /* Handicap 0 */
+        sp_handicap.setSelection(0);
+
+        komi.setText("6.5");
+    }
+
+    private GoPlaySetting get_play_setting()
+    {
+        GoPlaySetting setting = new GoPlaySetting();
+
+        setting.rule = sp_rule.getSelectedItemPosition();
+        try {
+            setting.komi = Float.parseFloat(komi.getText().toString());
+        } catch (NumberFormatException e) {
+            Log.d("EXP", "'" + komi.getText().toString() + "'" +
+                " cannot be converted to float");
+            setting.komi = (setting.rule == 0)? 6.5f : 7.5f;
+        }
+        setting.size = (Integer) sp_board_size.getSelectedItem();
+        setting.wb = sp_wb.getSelectedItemPosition();
+        setting.handicap = (Integer) sp_handicap.getSelectedItem();
+
+        return setting;
     }
 
     @Override
@@ -183,6 +285,8 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
         String m;
         switch (msg.what) {
             case GoMessageListener.BLUTOOTH_CLIENT_SOCKET_ERROR:
+                if (load_progress != null)
+                    load_progress.dismiss();
                 Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
                 break;
             case GoMessageListener.BLUTOOTH_CLIENT_CONNECT_SUCCESS:
@@ -203,7 +307,7 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
 
                 /* send game request */
                 m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY,
-                    null);
+                    this.get_play_setting());
 
                 BlutoothCommThread connected = BlutoothCommThread.getInstance();
                 if (connected != null)
@@ -221,14 +325,59 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     private void handle_comm_message(BlutoothMsgParser.MsgParsed msg)
     {
         String m;
+        Integer tmp;
         switch (msg.type) {
             case REQUEST_PLAY_ACK:
+                if (load_progress != null)
+                    load_progress.dismiss();
+
                 Log.d("CLIENT", "PLAY_ACK RECEIVED");
+                tmp = (Integer) msg.content;
+
+                if (tmp < 0) {
+                    Toast.makeText(this, (String) "Requested game setting was refused",
+                        Toast.LENGTH_SHORT).show();
+                    break;
+                }
+
+                GoPlaySetting setting = this.get_play_setting();
+                setting.wb = tmp;
+
                 Intent intent = new Intent(this, BluetoothGameActivity.class);
-                intent.putExtra(GoMessageListener.STONE_COLOR_MESSAGE, 1); /* client is white */
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(GoMessageListener.GAME_SETTING_MESSAGE, setting);
+                intent.putExtras(bundle);
+
                 startActivity(intent);
                 break;
         }
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Integer value;
+        if (parent.equals(this.sp_rule)) {
+            if (position == 0) {
+                komi.setText("6.5");
+            } else {
+                komi.setText("7.5");
+            }
+        } else if (parent.equals(this.sp_board_size)) {
+            value = (Integer) parent.getItemAtPosition(position);
+            if (value != 19) {
+                sp_handicap.setSelection(0);
+            }
+        } else if (parent.equals(this.sp_handicap)) {
+            value = (Integer) parent.getItemAtPosition(position);
+            if (value != 0) {
+                sp_board_size.setSelection(0);
+            }
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 
     private class BluetoothDeviceWrap {

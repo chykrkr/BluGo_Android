@@ -12,11 +12,13 @@ public interface GoMessageListener {
     int BLUTOOTH_CLIENT_CONNECT_SUCCESS = 4;
     int BLUTOOTH_COMM_ERROR = 5;
     int BLUTOOTH_COMM_MSG = 6;
-    int FRONTDOORACTIVITY_MSG_LOAD_END = 7;
+    int BLUTOOTH_COMM_ACCEPTED_REQUEST = 7;
+    int FRONTDOORACTIVITY_MSG_LOAD_END = 8;
     int MSG_MAX = FRONTDOORACTIVITY_MSG_LOAD_END;
 
-    public final static String STONE_COLOR_MESSAGE =
-        "com.example.user.blugo.GoMessageListener.STONE_COLOR";
+
+    public final static String GAME_SETTING_MESSAGE =
+        "com.example.user.blugo.GoMessageListener.GAME_SETTING_MESSAGE";
 
     Handler get_msg_handler();
 }

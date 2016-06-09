@@ -18,6 +18,7 @@ public class BlutoothServerThread extends Thread {
     private final BluetoothServerSocket mmServerSocket;
     private GoMessageListener listener;
     private BlutoothCommThread connected_thread = null;
+    private BluetoothSocket socket = null;
 
     private static BlutoothServerThread instance = null;
 
@@ -56,8 +57,6 @@ public class BlutoothServerThread extends Thread {
     }
 
     public void run() {
-        BluetoothSocket socket = null;
-
 	try {
 	    socket = mmServerSocket.accept();
 	} catch (IOException e) {

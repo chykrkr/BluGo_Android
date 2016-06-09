@@ -56,8 +56,13 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_game);
 
+        Bundle bundle;
         Intent intent = getIntent();
-        int bw = intent.getIntExtra(GoMessageListener.STONE_COLOR_MESSAGE, 0);
+        bundle = intent.getExtras();
+
+        GoPlaySetting setting = bundle.getParcelable(GoMessageListener.GAME_SETTING_MESSAGE);
+
+        int bw = setting.wb;
         Log.d("TEST", "bw: " + bw);
 
         game = new GoControlBluetooth(bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE);
@@ -79,6 +84,16 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
     {
         BlutoothServerThread server;
         BlutoothClientThread client;
+
+        /* stop communicator */
+        BlutoothCommThread comm;
+        comm = BlutoothCommThread.getInstance();
+        if (comm != null) {
+            comm.cancel();
+            try {
+                comm.join();
+            } catch (InterruptedException e) {}
+        }
 
         /* stop server */
         server = BlutoothServerThread.getInstance();
