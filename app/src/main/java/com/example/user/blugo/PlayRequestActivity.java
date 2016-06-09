@@ -35,7 +35,6 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     private ArrayAdapter arrayAdapter;
     private SingleReceiver mReceiver = null;
     private ProgressBar pbar_discover;
-    private BlutoothClientThread client;
     public Handler msg_handler = new Handler(this);
 
 
@@ -54,6 +53,8 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
                     Object o = dev_listview.getItemAtPosition(position);
                     BluetoothDevice device = ((BluetoothDeviceWrap) o).getBluetoothDevice();
 
+                    BlutoothClientThread client = BlutoothClientThread.getInstance();
+
                     if (client != null) {
                         client.cancel();
                         try {
@@ -63,7 +64,7 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
                         client = null;
                     }
 
-                    client = new BlutoothClientThread(mBluetoothAdapter, device,
+                    client = BlutoothClientThread.getInstance(mBluetoothAdapter, device,
                         PlayRequestActivity.this);
                     client.start();
 
@@ -82,13 +83,31 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     protected void onDestroy() {
         super.onDestroy();
 
+        /* Make sure client closed */
+        BlutoothClientThread client = BlutoothClientThread.getInstance();
+
+        if (client != null) {
+            client.cancel();
+            try {
+                client.join();
+            } catch (InterruptedException e) {
+            }
+            client = null;
+        }
+
         /* We must execute below codes */
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();
         }
 
-        if (mReceiver != null)
-            unregisterReceiver(mReceiver);
+        if (mReceiver != null) {
+            try {
+                unregisterReceiver(mReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.d("DEBUG", e.toString());
+            }
+            mReceiver = null;
+        }
     }
 
     public void listBluetoothDevice()
@@ -171,15 +190,24 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
                     mBluetoothAdapter.cancelDiscovery();
                 }
 
-                if (mReceiver != null)
-                    unregisterReceiver(mReceiver);
+                if (mReceiver != null) {
+                    try {
+                        unregisterReceiver(mReceiver);
+                    } catch (IllegalArgumentException e) {
+                        Log.d("DEBUG", e.toString());
+                    }
+                    mReceiver = null;
+                }
 
                 Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
 
                 /* send game request */
                 m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY,
                     null);
-                client.get_connected().write(m);
+
+                BlutoothCommThread connected = BlutoothCommThread.getInstance();
+                if (connected != null)
+                    connected.write(m);
                 break;
 
             case GoMessageListener.BLUTOOTH_COMM_MSG:

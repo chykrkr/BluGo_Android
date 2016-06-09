@@ -101,6 +101,8 @@ public class BlutoothCommThread extends Thread {
             } catch(IOException e) {
                 Log.d("MYTAG", e.toString());
 
+                this.instance = null;
+
                 try {
                     mutex.acquire();
                 } catch (InterruptedException ie) {}

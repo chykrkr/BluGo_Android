@@ -15,6 +15,11 @@ public class GoControlBluetooth extends GoControlSingle{
 
     private boolean _isMyTurn()
     {
+        BlutoothCommThread comm = BlutoothCommThread.getInstance();
+
+        if (comm == null)
+            return  false;
+
         if (calc_mode())
             return true;
 

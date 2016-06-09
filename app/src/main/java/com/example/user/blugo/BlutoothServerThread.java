@@ -17,9 +17,15 @@ public class BlutoothServerThread extends Thread {
     public final static UUID uuid = UUID.fromString("4a10c529-1d36-4fa2-b4b1-a95a88734c63");
     private final BluetoothServerSocket mmServerSocket;
     private GoMessageListener listener;
-    private BlutoothCommThread connected_thread;
+    private BlutoothCommThread connected_thread = null;
 
-    public BlutoothServerThread(BluetoothAdapter adapter, GoMessageListener listener) {
+    private static BlutoothServerThread instance = null;
+
+    private BlutoothServerThread() {
+	mmServerSocket = null;
+    }
+
+    private BlutoothServerThread(BluetoothAdapter adapter, GoMessageListener listener) {
         BluetoothServerSocket tmp = null;
         try {
             tmp = adapter.listenUsingRfcommWithServiceRecord("BluGoServer", uuid);
@@ -29,6 +35,20 @@ public class BlutoothServerThread extends Thread {
         mmServerSocket = tmp;
         this.listener = listener;
     }
+
+    public static BlutoothServerThread getInstance(BluetoothAdapter adapter, GoMessageListener listener)
+    {
+	if (instance == null) {
+	    instance = new BlutoothServerThread(adapter, listener);
+	}
+	return instance;
+    }
+
+    public static BlutoothServerThread getInstance()
+    {
+	return instance;
+    }
+
 
     public BlutoothCommThread get_connected()
     {
@@ -45,17 +65,18 @@ public class BlutoothServerThread extends Thread {
 
 	    Log.d("MYTAG", e.toString());
 
-	    Handler h = listener.get_msg_handler();
+            instance = null;
 
+	    Handler h = listener.get_msg_handler();
 	    msg = Message.obtain(h, GoMessageListener.BLUTOOTH_SERVER_SOCKET_ERROR,
 				 e.toString());
-	    h.sendMessage(msg);
-	    cancel();
+            h.sendMessage(msg);
+            cancel();
+
 	    return;
 	}
 
 	if (socket != null) {
-
 	    connected_thread = BlutoothCommThread.getInstance(socket, this.listener);
 	    connected_thread.start();
 	    try {
@@ -65,6 +86,9 @@ public class BlutoothServerThread extends Thread {
 	    }
 	    connected_thread = null;
 	}
+
+	instance = null;
+        cancel();
     }
 
     /* This method calls close method of BluetoothServer,
@@ -75,7 +99,7 @@ public class BlutoothServerThread extends Thread {
         try {
             mmServerSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.d("MYTAG", e.toString());
         }
     }
 }

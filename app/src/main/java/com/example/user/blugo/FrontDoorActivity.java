@@ -31,12 +31,27 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     private BluetoothAdapter mBluetoothAdapter = null;
 
-    private BlutoothServerThread server = null;
+    private Dialog dialog;
+
+    private boolean connection_established = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_front_door);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Light_Dialog);
+        } else {
+            dialog = new Dialog(this);
+        }
+
+        connection_established = false;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     public void load_SGF(View view)
@@ -87,18 +102,9 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         LayoutInflater inflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
         View layout = inflater.inflate(R.layout.wait_dialog, null);
 
-        final Dialog dialog;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Light_Dialog);
-        } else {
-            dialog = new Dialog(this);
-        }
-
         TextView t = (TextView) layout.findViewById(R.id.text_b_addr);
 
         String macAddress;
-
         /*
         After marshmallow,
         getAddress() method returns only 00:02:00:00:00:00 (deliberated false address).
@@ -114,7 +120,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         t = (TextView) layout.findViewById(R.id.text_b_name);
         t.setText(mBluetoothAdapter.getName());
 
-        server = new BlutoothServerThread(mBluetoothAdapter, this);
+        BlutoothServerThread server = BlutoothServerThread.getInstance(mBluetoothAdapter, this);
         server.start();
 
         dialog.setContentView(layout);
@@ -151,6 +157,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                 return true;
 
             case GoMessageListener.BLUTOOTH_SERVER_SOCKET_ERROR:
+                BlutoothServerThread server = BlutoothServerThread.getInstance();
                 if (server != null) {
                     server.cancel();
                     try {
@@ -173,10 +180,17 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         String m;
         switch (msg.type) {
             case REQUEST_PLAY:
+                BlutoothServerThread server = BlutoothServerThread.getInstance();
+
+                if (server == null)
+                    break;
+
                 Log.d("SERVER", "REQUEST_PLAY RECEIVED");
                 m = BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_PLAY_ACK,
                     null);
                 server.get_connected().write(m);
+
+                dialog.dismiss();
 
                 Intent intent = new Intent(this, BluetoothGameActivity.class);
                 intent.putExtra(GoMessageListener.STONE_COLOR_MESSAGE, 0); /* Server is black */
@@ -194,13 +208,20 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     @Override
     public void onDismiss(DialogInterface dialog) {
+        BlutoothServerThread server = BlutoothServerThread.getInstance();
+
         if (server == null)
             return;
+
+        if (server.get_connected() != null) {
+            /* There are established connection */
+            return;
+        }
+
         server.cancel();
         try {
             server.join();
         } catch (InterruptedException e) {}
-        server = null;
     }
 
     @Override

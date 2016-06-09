@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class BluetoothGameActivity extends AppCompatActivity implements Handler.Callback,
     GoBoardViewListener, GoMessageListener {
@@ -74,6 +75,36 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         }
     }
 
+    private void stop_server_client()
+    {
+        BlutoothServerThread server;
+        BlutoothClientThread client;
+
+        /* stop server */
+        server = BlutoothServerThread.getInstance();
+        if (server != null) {
+            server.cancel();
+            try {
+                server.join();
+            } catch (InterruptedException e) {}
+        }
+
+        /* stop client */
+        client = BlutoothClientThread.getInstance();
+        if (client != null) {
+            client.cancel();
+            try {
+                client.join();
+            } catch (InterruptedException e) {}
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stop_server_client();
+    }
+
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
@@ -81,10 +112,15 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
                 txt_info.setText(get_info_text());
                 return true;
 
+            case GoMessageListener.BLUTOOTH_COMM_ERROR:
+                stop_server_client();
+                Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                return true;
+
             case GoMessageListener.BLUTOOTH_COMM_MSG:
                 BlutoothMsgParser.MsgParsed parsed = (BlutoothMsgParser.MsgParsed) msg.obj;
                 handle_comm_message(parsed);
-                break;
+                return true;
         }
 
         return false;

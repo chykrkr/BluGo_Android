@@ -18,7 +18,17 @@ public class BlutoothClientThread extends Thread {
     private final GoMessageListener listener;
     private BlutoothCommThread connected_thread;
 
-    public BlutoothClientThread(BluetoothAdapter adapter, BluetoothDevice device, GoMessageListener listener)
+    private static BlutoothClientThread instance;
+
+    private BlutoothClientThread()
+    {
+	mmSocket = null;
+	mmDevice = null;
+	mBluetoothAdapter = null;
+	listener = null;
+    }
+
+    private BlutoothClientThread(BluetoothAdapter adapter, BluetoothDevice device, GoMessageListener listener)
     {
         BluetoothSocket tmp = null;
         mmDevice = device;
@@ -31,9 +41,18 @@ public class BlutoothClientThread extends Thread {
         this.listener = listener;
     }
 
-    public BlutoothCommThread get_connected()
+    public static BlutoothClientThread getInstance()
     {
-        return this.connected_thread;
+	return instance;
+    }
+
+    public static BlutoothClientThread getInstance(BluetoothAdapter adapter, BluetoothDevice device, GoMessageListener listener)
+    {
+	if (instance == null) {
+	    instance = new BlutoothClientThread(adapter, device, listener);
+	}
+
+	return instance;
     }
 
     public void run()
@@ -47,6 +66,7 @@ public class BlutoothClientThread extends Thread {
         try {
             mmSocket.connect();
         } catch (IOException connectException) {
+            this.instance = null;
             msg = Message.obtain(h, GoMessageListener.BLUTOOTH_CLIENT_SOCKET_ERROR,
                 connectException.toString());
             h.sendMessage(msg);
@@ -63,11 +83,13 @@ public class BlutoothClientThread extends Thread {
             h.sendMessage(msg);
             connected_thread.join();
         } catch(InterruptedException e) {
+            this.instance = null;
             msg = Message.obtain(h, GoMessageListener.BLUTOOTH_CLIENT_SOCKET_ERROR,
                 e.toString());
             h.sendMessage(msg);
         }
         connected_thread = null;
+        this.instance = null;
         cancel();
     }
 
