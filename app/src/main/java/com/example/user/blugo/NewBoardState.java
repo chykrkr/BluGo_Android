@@ -465,18 +465,31 @@ public class NewBoardState implements Parcelable{
 
         AtomicInteger boarder_color = new AtomicInteger(0x00);
         HashSet<Point> vhistory = new HashSet<>();
+        HashSet<Point> vhistory_all = new HashSet<>();
         GoRule.BoardPosState empty_from, empty_to;
 
+	/*
+	  It's slightly faster using vhistory_all then not using it.
+	  ms times when using vhistory_all : 203, 203, 204, 211
+	  else                             : 320, 266, 305, 289
+	 */
+
+	// Log.d("DEBUG", "TOGGLE START");
         for (Point p : empty_pos) {
+	    if (vhistory_all.contains(p))
+		continue;
+
             empty_from = get_state(pos[p.x + p.y * size]);
             boarder_color.set(0x00);
-                /* check border again */
-                /*
-                Because we don't have additional information to stop recursive function call,
-                we provide information for already visited point as a function parameter.
-                 */
+	    /* check border again */
+	    /*
+	      Because we don't have additional information to stop recursive function call,
+	      we provide information for already visited point as a function parameter.
+	    */
             vhistory.clear();
-            find_border(p.x, p.y, boarder_color,vhistory);
+            find_border(p.x, p.y, boarder_color, vhistory);
+
+            vhistory_all.addAll(vhistory);
 
             if (boarder_color.get() == 0x01) {
                 flood_fill(p.x, p.y, empty_from, GoRule.BoardPosState.EMPTY_WHITE);
@@ -486,23 +499,25 @@ public class NewBoardState implements Parcelable{
                 flood_fill(p.x, p.y, empty_from, GoRule.BoardPosState.EMPTY_NEUTRAL);
         }
 
-            /* Release memory */
+	/* Release memory */
         vhistory = null;
+	vhistory_all = null;
+	// Log.d("DEBUG", "TOGGLE END");
     }
 
     /* Do flood_fill and find surrounding empty points */
     private void flood_fill(int x, int y, GoRule.BoardPosState from, GoRule.BoardPosState to, HashSet<Point> empty_pos)
     {
         GoRule.BoardPosState cur_state;
+        ArrayList<Point> queue = new ArrayList<>();
+	Point p;
 
-            /*We need to change it to non-recursive version*/
-        if (x < 0 || x >= size)
-            return;
-
-        if (y < 0 || y >= size)
+	/*We need to change it to non-recursive version*/
+        if (x < 0 || x >= size || y < 0 || y >= size)
             return;
 
         cur_state = get_state(pos[x + y * size]);
+        p = new Point(x, y);
 
         if (empty_pos != null) {
             switch (cur_state) {
@@ -510,84 +525,123 @@ public class NewBoardState implements Parcelable{
                 case EMPTY_NEUTRAL:
                 case EMPTY_WHITE:
                 case EMPTY_BLACK:
-                    empty_pos.add(new Point(x, y));
+                    empty_pos.add(p);
                     break;
             }
         }
 
-        if (cur_state == to)
+        if (cur_state == to || cur_state != from)
             return;
 
-        if (cur_state != from)
-            return;
+	queue.add(p);
 
-        pos[x + y * size] = combine_to_int(get_group_id(pos[x + y * size]), to);
+	while (!queue.isEmpty()) {
+	    p = queue.get(0);
+	    queue.remove(0);
 
-            /* south */
-        flood_fill(x, y + 1, from, to, empty_pos);
+	    /* Boundary over check */
+	    if (p.x < 0 || p.x >= size || p.y < 0 || p.y >= size)
+		continue;
 
-            /* north */
-        flood_fill(x, y - 1, from, to, empty_pos);
+	    cur_state = get_state(pos[p.x + p.y * size]);
+	    if (empty_pos != null) {
+		switch (cur_state) {
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                case EMPTY_WHITE:
+                case EMPTY_BLACK:
+                    empty_pos.add(new Point(p.x, p.y));
+                    break;
+		}
+	    }
 
-            /* west */
-        flood_fill(x - 1, y, from, to, empty_pos);
+	    /* check if we visited it already. */
+	    if (cur_state == to || cur_state != from)
+		continue;
 
-            /* east */
-        flood_fill(x + 1, y, from, to, empty_pos);
+	    /* Mark visited */
+	    pos[p.x + p.y * size] = combine_to_int(get_group_id(pos[p.x + p.y * size]), to);
+
+            /* Apply recursively for each direction of up, down, left, right */
+            queue.add(new Point(p.x - 1, p.y));
+            queue.add(new Point(p.x + 1, p.y));
+            queue.add(new Point(p.x, p.y - 1));
+            queue.add(new Point(p.x, p.y + 1));
+	}
     }
 
     private void flood_fill(int x, int y, GoRule.BoardPosState from, GoRule.BoardPosState to)
     {
-            /*We need to change it to non-recursive version*/
-        if (x < 0 || x >= size)
+        GoRule.BoardPosState cur_state;
+	ArrayList<Point> queue = new ArrayList<>();
+	Point p;
+
+        if (x < 0 || x >= size || y < 0 || y >= size)
             return;
 
-        if (y < 0 || y >= size)
+        cur_state = get_state(pos[x + y * size]);
+
+        if (cur_state == to || cur_state != from)
             return;
 
-        if (get_state(pos[x + y * size]) == to)
-            return;
+	p = new Point(x, y);
+	queue.add(p);
 
-        if (get_state(pos[x + y * size]) != from)
-            return;
+	while (!queue.isEmpty()) {
+	    p = queue.get(0);
+	    queue.remove(0);
 
-        pos[x + y * size] = combine_to_int(get_group_id(pos[x + y * size]), to);
+	    /* Boundary over check */
+	    if (p.x < 0 || p.x >= size || p.y < 0 || p.y >= size)
+		continue;
 
-            /* south */
-        flood_fill(x, y + 1, from, to);
+	    cur_state = get_state(pos[p.x + p.y * size]);
+	    /* check if we visited it already. */
+	    if (cur_state == to || cur_state != from)
+		continue;
 
-            /* north */
-        flood_fill(x, y - 1, from, to);
+	    /* Mark visited */
+	    pos[p.x + p.y * size] = combine_to_int(get_group_id(pos[p.x + p.y * size]), to);
 
-            /* west */
-        flood_fill(x - 1, y, from, to);
-
-            /* east */
-        flood_fill(x + 1, y, from, to);
+            /* Apply recursively for each direction of up, down, left, right */
+            queue.add(new Point(p.x - 1, p.y));
+            queue.add(new Point(p.x + 1, p.y));
+            queue.add(new Point(p.x, p.y - 1));
+            queue.add(new Point(p.x, p.y + 1));
+	}
     }
 
     private void find_border(int x, int y, AtomicInteger color, HashSet<Point> vhistory)
     {
         GoRule.BoardPosState state;
-        Point p;
+        ArrayList<Point> queue = new ArrayList<>();
 
-        p = new Point(x, y);
-            /* It's aready visited point.
-            Don't do anything to prevent infinite recursion
-             */
-        if (vhistory.contains(p))
+	/* It's aready visited point.
+	   Don't do anything to prevent infinite recursion
+	*/
+        if (vhistory.contains(new Point(x, y)))
             return;
-
-        vhistory.add(p);
 
         if (x < 0 || x >= size || y < 0 || y >= size)
             return;
 
-        Log.d("SEARCH", "Searching: " + x + "," + y);
+	queue.add(new Point(x, y));
 
-        state = get_state(pos[x + y * size]);
+	while (!queue.isEmpty()) {
+	    Point p = queue.get(0);
+	    queue.remove(0);
 
-        switch (state) {
+	    /* Boundary over check */
+	    if (p.x < 0 || p.x >= size || p.y < 0 || p.y >= size)
+		continue;
+
+	    /* check if we visited it already. */
+	    if (vhistory.contains(p))
+		continue;
+
+	    state = get_state(pos[p.x + p.y * size]);
+
+	    switch (state) {
             case WHITE:
             case BLACK_DEAD:
                 color.set(color.get() | 0x01);
@@ -596,9 +650,9 @@ public class NewBoardState implements Parcelable{
             case WHITE_DEAD:
                 color.set(color.get() | 0x02);
                 break;
-        }
+	    }
 
-        switch (state) {
+	    switch (state) {
             case EMPTY:
             case EMPTY_NEUTRAL:
             case EMPTY_WHITE:
@@ -606,21 +660,26 @@ public class NewBoardState implements Parcelable{
                 break;
 
             default:
-                    /* If it's not empty */
-                return;
-        }
+		/* If it's not empty */
+		continue;
+	    }
+
+	    /* Mark visited */
+	    vhistory.add(p);
 
             /* Apply recursively for each direction of up, down, left, right */
-        find_border(x - 1, y, color, vhistory);
-        find_border(x + 1, y, color, vhistory);
-        find_border(x, y - 1, color, vhistory);
-        find_border(x, y + 1, color, vhistory);
+            queue.add(new Point(p.x - 1, p.y));
+            queue.add(new Point(p.x + 1, p.y));
+            queue.add(new Point(p.x, p.y - 1));
+            queue.add(new Point(p.x, p.y + 1));
+	}
     }
 
     private void find_border(int x, int y, int group_id, AtomicInteger color)
     {
         int cur_group_id;
         GoRule.BoardPosState state;
+        ArrayList<Point> queue = new ArrayList<>();
 
         if (x < 0 || x >= size || y < 0 || y >= size)
             return;
@@ -630,39 +689,55 @@ public class NewBoardState implements Parcelable{
         if (cur_group_id == group_id)
             return;
 
-        state = get_state(pos[x + y * size]);
+        queue.add(new Point(x, y));
 
-        switch (state) {
-            case WHITE:
-            case BLACK_DEAD:
-                color.set(color.get() | 0x01);
-                break;
-            case BLACK:
-            case WHITE_DEAD:
-                color.set(color.get() | 0x02);
-                break;
-        }
+        while (!queue.isEmpty()) {
+            Point p = queue.get(0);
+            queue.remove(0);
 
-        switch (state) {
-            case EMPTY:
-            case EMPTY_NEUTRAL:
-            case EMPTY_WHITE:
-            case EMPTY_BLACK:
-                break;
+	    /* Boundary over check */
+	    if (p.x < 0 || p.x >= size || p.y < 0 || p.y >= size)
+		continue;
 
-            default:
+	    /* check if we visited it already. */
+            cur_group_id = get_group_id(pos[p.x + p.y * size]);
+            if (cur_group_id == group_id)
+                continue;
+
+            state = get_state(pos[p.x + p.y * size]);
+
+            switch (state) {
+                case WHITE:
+                case BLACK_DEAD:
+                    color.set(color.get() | 0x01);
+                    break;
+                case BLACK:
+                case WHITE_DEAD:
+                    color.set(color.get() | 0x02);
+                    break;
+            }
+
+            switch (state) {
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                case EMPTY_WHITE:
+                case EMPTY_BLACK:
+                    break;
+
+                default:
                     /* If it's not empty */
-                return;
-        }
+                    continue;
+            }
 
-            /* change group id */
-        pos[x + y * size] = combine_to_int(group_id, get_state(pos[x + y * size]));
+            /* Mark visited */
+            pos[p.x + p.y * size] = combine_to_int(group_id, get_state(pos[p.x + p.y * size]));
 
             /* Apply recursively for each direction of up, down, left, right */
-        find_border(x - 1, y, group_id, color);
-        find_border(x + 1, y, group_id, color);
-        find_border(x, y - 1, group_id, color);
-        find_border(x, y + 1, group_id, color);
+            queue.add(new Point(p.x - 1, p.y));
+            queue.add(new Point(p.x + 1, p.y));
+            queue.add(new Point(p.x, p.y - 1));
+            queue.add(new Point(p.x, p.y + 1));
+        }
     }
 
     /* Roughly determine owner of empty space */

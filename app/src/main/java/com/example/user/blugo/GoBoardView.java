@@ -249,7 +249,7 @@ public class GoBoardView extends View implements GoControl.Callback {
 
         Paint paint;
 
-        Log.d("DIM", getWidth() + "x" + getHeight());
+        /*Log.d("DIM", getWidth() + "x" + getHeight());*/
 
         if (contentWidth > contentHeight) {
             board_canvas_h = board_canvas_w = contentHeight;
