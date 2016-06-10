@@ -370,7 +370,10 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
         } else if (parent.equals(this.sp_handicap)) {
             value = (Integer) parent.getItemAtPosition(position);
             if (value != 0) {
+                /* Choose 19x19 */
                 sp_board_size.setSelection(0);
+                /* Set komi to 0 */
+                komi.setText("0");
             }
         }
     }

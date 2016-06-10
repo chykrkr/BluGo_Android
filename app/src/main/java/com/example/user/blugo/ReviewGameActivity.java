@@ -169,7 +169,7 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         int progress = sbar.getProgress();
         int max = sbar.getMax();
 
-        if (++progress >= max)
+        if (++progress > max)
             return;
 
         sbar.setProgress(progress);

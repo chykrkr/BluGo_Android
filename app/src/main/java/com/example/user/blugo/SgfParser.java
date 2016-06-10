@@ -38,8 +38,10 @@ public class SgfParser {
         public Object content = null;
     }
 
-    private static final Pattern semicolon = Pattern.compile("(?m);([^;]*)");
-    private static final Pattern command = Pattern.compile("(?m)([A-Z]+)\\[(.*?)\\]");
+    //private static final Pattern semicolon = Pattern.compile("(?m);([^;]*)");
+    private static final Pattern semicolon = Pattern.compile(";([^;]*)");
+    //private static final Pattern command = Pattern.compile("(?m)([A-Z]+)\\[(.*?)\\]");
+    private static final Pattern command = Pattern.compile("([A-Z]+)\\[(.*?)\\]");
     private static final Pattern position = Pattern.compile("^[a-zA-Z][a-zA-Z]$");
 
     public ArrayList<ParsedItem> parse(String sgf_string) {
