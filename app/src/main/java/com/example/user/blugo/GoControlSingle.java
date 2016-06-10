@@ -14,17 +14,30 @@ public class GoControlSingle extends GoControl {
     private int board_size = 19;
     protected Player current_turn = Player.BLACK;
     protected GoRule rule;
-    private float komi = 6.5f;
+    protected float komi = 6.5f;
     private int pass_count = 0;
     private static final int MAX_PASS_COUNT = 2;
     private int start_turn = 0;
+    /*
+    null : Result not determined.
+    Positive : W won by this value
+    Negative : B won by this value
+    0 : draw
+     */
+    protected Float final_score_diff = null;
+    /*
+    -1 : No one resigned
+    0 : white resigned
+    1 : black resigned
+     */
+    protected int resigned = -1;
 
     GoControlSingle() {
-        this(19, Player.BLACK, null, new GoRuleJapan(),0);
+        this(19, Player.BLACK, null, new GoRuleJapan(19),0);
     }
 
     GoControlSingle(Callback callback_receiver) {
-        this(19, Player.BLACK, callback_receiver, new GoRuleJapan(), 0);
+        this(19, Player.BLACK, callback_receiver, new GoRuleJapan(19), 0);
     }
 
     GoControlSingle(int board_size, Player current_turn, GoRule rule) {
@@ -110,6 +123,7 @@ public class GoControlSingle extends GoControl {
         ArrayList<SgfParser.ParsedItem> result;
         SgfParser parser = new SgfParser();
         Point p;
+        boolean tmp = false;
 
         pass_count = 0;
 
@@ -119,16 +133,39 @@ public class GoControlSingle extends GoControl {
 
         this.current_turn = Player.BLACK;
         this.rule = null;
-        this.rule = new GoRuleJapan();
 
+        /* Two phase first we should get board size first */
+        tmp = false;
+        /* default board size if we cannot found board size information */
+        this.board_size = 19;
         for (SgfParser.ParsedItem item : result) {
             switch (item.type) {
                 case BOARD_SIZE:
                     Integer size = (Integer) item.content;
                     this.board_size = size;
+                    /* Leave out of loop as soon as possible */
+                    tmp = true;
                     break;
+            }
+
+            if (tmp == true)
+                break;
+        }
+
+        this.rule = new GoRuleJapan(this.board_size);
+
+        for (SgfParser.ParsedItem item : result) {
+            switch (item.type) {
+                /*
+                //We already processed board size.
+                case BOARD_SIZE:
+                    Integer size = (Integer) item.content;
+                    this.board_size = size;
+                    break;
+                    */
 
                 case KOMI:
+                    this.komi = (Float) item.content;
                     break;
 
                 case WHITE_PUT:
@@ -191,7 +228,7 @@ public class GoControlSingle extends GoControl {
     }
 
     @Override
-    public synchronized void undo()
+    public synchronized boolean undo()
     {
         if (calc_mode()) {
             rule.cancel_calc();
@@ -199,13 +236,13 @@ public class GoControlSingle extends GoControl {
 
         ArrayList<GoAction> history = rule.get_action_history();
         if (history.size() < 1)
-            return;
+            return false;
 
         GoAction last_action;
         last_action = history.get(history.size() - 1);
 
 	if (!this.rule.undo()) {
-	    return;
+	    return false;
 	}
 
         if (last_action.action == Action.PASS && pass_count > 0) {
@@ -215,12 +252,15 @@ public class GoControlSingle extends GoControl {
         current_turn = last_action.player;
 
         this.callback_receiver.callback_board_state_changed();
+        return  true;
     }
 
     @Override
     public GoInfo get_info() {
         GoInfo info = new GoInfo();
         AtomicInteger value1 = new AtomicInteger(0), value2  = new AtomicInteger(0);
+        AtomicInteger value3 = new AtomicInteger(0), value4  = new AtomicInteger(0);
+        AtomicInteger value5 = new AtomicInteger(0), value6  = new AtomicInteger(0);
         info.turn = this.current_turn;
         info.komi = this.komi;
 
@@ -229,13 +269,24 @@ public class GoControlSingle extends GoControl {
         info.black_dead = value2.get();
 
         if (calc_mode()) {
-            rule.get_score(value1, value2);
+            rule.get_score(value1, value2, value3, value4, value5, value6);
             info.white_score = value1.get();
             info.black_score = value2.get();
+            info.white_dead += value3.get();
+            info.black_dead += value4.get();
+            info.white_count += value5.get();
+            info.black_count += value6.get();
         }
 
         ArrayList<GoAction> history = rule.get_action_history();
         info.turn_num = history.size() + 1 + start_turn;
+
+        /* japanese counting */
+        info.white_final = info.white_score + info.black_dead + info.komi;
+        info.black_final = info.black_score + info.white_dead;
+        info.score_diff = info.white_final - info.black_final;
+
+        info.resigned = this.resigned;
 
         return info;
     }
@@ -244,7 +295,7 @@ public class GoControlSingle extends GoControl {
     public synchronized void new_game() {
         this.current_turn = Player.BLACK;
         this.rule = null;
-        this.rule = new GoRuleJapan();
+        this.rule = new GoRuleJapan(board_size);
         this.callback_receiver.callback_board_state_changed();
     }
 
@@ -269,5 +320,14 @@ public class GoControlSingle extends GoControl {
     @Override
     public ArrayList<GoRule.BoardPos> get_calc_info() {
         return rule.get_calc_info();
+    }
+
+    @Override
+    public synchronized void resign() {
+        if (current_turn == Player.BLACK) {
+            this.resigned = 1;
+        } else {
+            this.resigned = 0;
+        }
     }
 }

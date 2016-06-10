@@ -42,34 +42,46 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        >
+        android:weightSum="1">
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="57dp"
             android:layout_height="wrap_content"
             android:text="Undo"
-            android:id="@+id/button3"
-            />
+            android:id="@+id/btn_undo"
+            android:layout_weight="0.31"
+            android:onClick="undo"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="58dp"
             android:layout_height="wrap_content"
             android:text="Pass"
-            android:id="@+id/button6"
-            android:onClick="pass"/>
+            android:id="@+id/btn_pass"
+            android:onClick="pass"
+            android:layout_weight="0.12"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="59dp"
             android:layout_height="wrap_content"
-            android:text="Save SGF"
+            android:text="Save"
             android:id="@+id/button4"
             />
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="75dp"
             android:layout_height="wrap_content"
             android:text="Resign"
-            android:id="@+id/button15"/>
+            android:id="@+id/btn_resign"
+            android:onClick="resign"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Confirm"
+            android:id="@+id/btn_confirm"
+            android:layout_weight="0.08"
+            android:visibility="visible"
+            android:onClick="confirm_result"/>
 
     </LinearLayout>
 

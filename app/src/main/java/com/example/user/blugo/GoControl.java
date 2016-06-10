@@ -126,8 +126,20 @@ public abstract class GoControl {
     {
         public int white_dead = 0;
         public int black_dead = 0;
+
         public int white_score = 0;
         public int black_score = 0;
+
+        public int white_count = 0;
+        public int black_count = 0;
+
+        public float white_final = 0.0f;
+        public float black_final = 0.0f;
+        /*white final score - black final score */
+        public float score_diff = 0.0f;
+
+        public int resigned = -1;
+
         public float komi = 6.5f;
         public int turn_num = 0;
         public Player turn = Player.BLACK;
@@ -145,7 +157,8 @@ public abstract class GoControl {
     public abstract Point get_cur_coord();
 
     public abstract boolean pass();
-    public abstract void undo();
+    public abstract boolean undo();
+    public abstract void resign();
 
     public abstract GoInfo get_info();
 

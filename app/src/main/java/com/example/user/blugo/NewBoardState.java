@@ -45,6 +45,8 @@ public class NewBoardState implements Parcelable{
             }
             */
 
+        state.size = size;
+
         state.ko_x = ko_x;
         state.ko_y = ko_y;
 
@@ -60,8 +62,8 @@ public class NewBoardState implements Parcelable{
 
     NewBoardState(int size, int ko_x, int ko_y) {
         pos = new int[size * size];
-        int i;
 
+        this.size = size;
         this.ko_x = ko_x;
         this.ko_y = ko_y;
     }
@@ -773,38 +775,52 @@ public class NewBoardState implements Parcelable{
         }
     }
 
-    public void get_score(AtomicInteger white, AtomicInteger black)
+    public void get_score(AtomicInteger white, AtomicInteger black,
+                          AtomicInteger add_wd, AtomicInteger add_bd,
+                          AtomicInteger wcount, AtomicInteger bcount)
     {
         int i, j;
-        int white_count = 0, black_count = 0;
+        int white_score = 0, black_score = 0;
+        int add_wd_count = 0, add_bd_count = 0;
+        int wcount_v = 0, bcount_v = 0;
 
         for (i = 0 ; i < pos.length ; i++) {
             switch (get_state(pos[i])) {
                 case BLACK:
+                    bcount_v++;
+                    break;
+
                 case WHITE:
+                    wcount_v++;
+                    break;
+
                 case EMPTY:
                 case EMPTY_NEUTRAL:
                     break;
 
                 case EMPTY_BLACK:
-                    black_count++;
+                    black_score++;
                     break;
 
                 case EMPTY_WHITE:
-                    white_count++;
+                    white_score++;
                     break;
 
                 case BLACK_DEAD:
-                    white_count+=2;
+                    white_score++;
+                    add_bd_count++;
                     break;
 
                 case WHITE_DEAD:
-                    black_count+=2;
+                    black_score++;
+                    add_wd_count++;
                     break;
             }
         }
 
-        white.set(white_count); black.set(black_count);
+        white.set(white_score); black.set(black_score);
+        add_wd.set(add_wd_count); add_bd.set(add_bd_count);
+        wcount.set(wcount_v);bcount.set(bcount_v);
     }
 
     @Override

@@ -2,19 +2,38 @@ package com.example.user.blugo;
 
 import android.graphics.Point;
 
+import java.util.ArrayList;
+
 /**
  * Created by user on 2016-06-08.
  */
 public class GoControlBluetooth extends GoControlSingle{
     private  Player my_turn;
+    private boolean game_finished = false;
+    private boolean confirm_check = false;
+    private boolean undo_waiting = false;
 
     GoControlBluetooth(Player my_turn) {
-        super();
+	this(19, 6.5f, 0, new GoRuleJapan(19), my_turn);
+    }
+
+    GoControlBluetooth(int board_size, float komi, int handicap, GoRule rule, Player my_turn) {
+        super(board_size, Player.BLACK, rule);
+	this.komi = komi;
         this.my_turn = my_turn;
     }
 
     private boolean _isMyTurn()
     {
+        if (game_finished)
+            return  false;
+
+        if (confirm_check)
+            return false;
+
+        if (undo_waiting)
+            return false;
+
         BlutoothCommThread comm = BlutoothCommThread.getInstance();
 
         if (comm == null)
@@ -24,6 +43,11 @@ public class GoControlBluetooth extends GoControlSingle{
             return true;
 
         return this.current_turn == my_turn;
+    }
+
+    public Player get_my_color()
+    {
+        return my_turn;
     }
 
     @Override
@@ -75,7 +99,86 @@ public class GoControlBluetooth extends GoControlSingle{
     }
 
     @Override
-    public synchronized void undo() {
+    public synchronized boolean undo() {
+        BlutoothCommThread comm;
+        comm = BlutoothCommThread.getInstance();
+
+
+        ArrayList<GoAction> history = rule.get_action_history();
+        if (history.size() < 1)
+            return false;
+
+        if (comm == null)
+            return false;
+
         /* super.undo(); */
+        if (undo_waiting)
+            return false;
+
+        undo_waiting = true;
+
+        comm.write(BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.REQUEST_UNDO,
+            null
+        ));
+
+        return true;
+    }
+
+    public synchronized void undo_apply(boolean accepted, boolean i_requested) {
+        if (accepted) {
+            super.undo();
+
+            if (i_requested) {
+                while (current_turn != my_turn) {
+                    if (super.undo() == false)
+                        break;
+                }
+                /* now again current_turn == my_turn */
+            } else {
+                while (current_turn == my_turn) {
+                    if (super.undo() == false)
+                        break;
+                }
+
+                /* now again current_turn != my_turn */
+            }
+        }
+        undo_waiting = false;
+    }
+
+    @Override
+    public synchronized void resign() {
+        BlutoothCommThread comm;
+        comm = BlutoothCommThread.getInstance();
+
+        if (comm == null)
+            return;
+
+        if (this.my_turn == Player.BLACK) {
+            this.resigned = 1;
+        } else {
+            this.resigned = 0;
+        }
+
+        comm.write(BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.RESIGN,
+            null
+        ));
+    }
+
+    public synchronized void opponent_resigned() {
+        if (this.my_turn == Player.BLACK) {
+            this.resigned = 0;
+        } else {
+            this.resigned = 1;
+        }
+    }
+
+    public void finish_game()
+    {
+        game_finished = true;
+    }
+
+    public void setConfirm_check(boolean confirm_check) {
+        this.confirm_check = confirm_check;
     }
 }

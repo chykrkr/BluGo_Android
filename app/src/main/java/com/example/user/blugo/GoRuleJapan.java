@@ -15,10 +15,12 @@ public class GoRuleJapan extends GoRule {
     private ArrayList<GoControl.GoAction> action_history = new ArrayList<>();
     private int seq_no = 0;
 
-    GoRuleJapan()
+    private GoRuleJapan() {}
+
+    GoRuleJapan(int board_size)
     {
         /* Always add single empty board */
-        new_timeline.add(new NewBoardState());
+        new_timeline.add(new NewBoardState(board_size));
     }
 
     GoRuleJapan(NewBoardState initial_time_line)
@@ -119,9 +121,12 @@ public class GoRuleJapan extends GoRule {
     }
 
     @Override
-    public void get_score(AtomicInteger white, AtomicInteger black) {
+    public void get_score(AtomicInteger white, AtomicInteger black,
+                          AtomicInteger add_wd, AtomicInteger add_bd,
+                          AtomicInteger wcount, AtomicInteger bcount)
+    {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
-        state.get_score(white, black);
+        state.get_score(white, black, add_wd, add_bd, wcount, bcount);
     }
 
     @Override

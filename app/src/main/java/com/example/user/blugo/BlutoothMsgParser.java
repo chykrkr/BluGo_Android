@@ -16,7 +16,14 @@ public class BlutoothMsgParser {
         REQUEST_PLAY_ACK(2), /* PLAY REQUEST ACK */
         PUTSTONE(3), /* PLAY REQUEST ACK */
         PASS(4),
-        UNKNOWN(5);
+        RESIGN(5),
+        RESULT_CONFIRM(6),
+        DECLINE_RESULT(7),
+        ACCEPT_RESULT(8),
+        REQUEST_UNDO(9),
+        ACCEPT_UNDO(10),
+        DECLINE_UNDO(11),
+        UNKNOWN(12);
 
         private final int value;
 
@@ -45,6 +52,13 @@ public class BlutoothMsgParser {
         "ACK_PLAY",
         "PUTSTONE",
         "PASS",
+        "RESIGN",
+        "RESULT_CONFIRM",
+        "DECLINE_RESULT",
+        "ACCEPT_RESULT",
+        "REQUEST_UNDO",
+        "ACCEPT_UNDO",
+        "DECLINE_UNDO",
         "?????"
     };
 
@@ -177,27 +191,18 @@ public class BlutoothMsgParser {
             }
         }
 
-        switch (type) {
-            case CHAT:
-                parsed.type = type;
-                break;
+        parsed.type = type;
 
+        switch (type) {
             case REQUEST_PLAY_ACK:
-                parsed.type = type;
                 parsed.content = parse_request_play_ack(opt);
                 break;
 
             case REQUEST_PLAY:
-                parsed.type = type;
                 parsed.content = parse_request_play(opt);
                 break;
 
-            case PASS:
-                parsed.type = type;
-                break;
-
             case PUTSTONE:
-                parsed.type = type;
                 parsed.content = parse_putstone(opt);
                 break;
         }

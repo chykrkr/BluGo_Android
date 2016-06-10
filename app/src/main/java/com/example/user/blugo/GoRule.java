@@ -77,5 +77,7 @@ public abstract class GoRule {
     public abstract void prepare_calc();
 
     public abstract void get_dead(AtomicInteger white, AtomicInteger black);
-    public abstract void get_score(AtomicInteger white, AtomicInteger black);
+    public abstract void get_score(AtomicInteger white, AtomicInteger black,
+                          AtomicInteger add_wd, AtomicInteger add_bd,
+                          AtomicInteger wcount, AtomicInteger bcount);
 }
