@@ -45,10 +45,10 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         GoControl.GoInfo info =  game.get_info();
 
         if (game.calc_mode()) {
-            if (info.resigned == 0) {
+            if (info.resigned == GoControl.Player.WHITE) {
                 /* white resigned */
                 result = "B+R";
-            } else if (info.resigned == 1) {
+            } else if (info.resigned == GoControl.Player.BLACK) {
                 /* black resigned */
                 result = "W+R";
             } else if (info.score_diff == 0) {
@@ -67,9 +67,9 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
                 info.turn_num,
                 info.white_dead, info.black_dead);
 
-            if (info.resigned == 0) {
+            if (info.resigned == GoControl.Player.WHITE) {
                 str += ", B+R";
-            } else if (info.resigned == 1) {
+            } else if (info.resigned == GoControl.Player.BLACK) {
                 str += ", W+R";
             }
         }

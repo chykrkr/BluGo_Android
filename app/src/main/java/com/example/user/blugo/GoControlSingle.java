@@ -3,6 +3,7 @@ package com.example.user.blugo;
 import android.graphics.Point;
 import android.util.Log;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,7 +31,7 @@ public class GoControlSingle extends GoControl {
     0 : white resigned
     1 : black resigned
      */
-    protected int resigned = -1;
+    protected Player resigned = null;
 
     GoControlSingle() {
         this(19, Player.BLACK, null, new GoRuleJapan(19),0);
@@ -56,9 +57,16 @@ public class GoControlSingle extends GoControl {
         this.start_turn = start_turn;
     }
 
+    private boolean _isMyTurn() {
+        if (resigned != null)
+            return false;
+
+        return true;
+    }
+
     @Override
     public synchronized boolean isMyTurn() {
-        return true;
+        return _isMyTurn();
     }
 
     @Override
@@ -102,17 +110,97 @@ public class GoControlSingle extends GoControl {
         return true;
     }
 
+    private String get_sgf_from_calc_info()
+    {
+        int i, x, y;
+        ArrayList<GoRule.BoardPos> info = rule.get_calc_info();
+
+        String tw = "";
+        String tb = "";
+
+        for (i = 0 ; i < info.size() ; i++) {
+            GoRule.BoardPos cinfo = info.get(i);
+
+            switch (cinfo.state) {
+                case WHITE:
+                case BLACK:
+                case EMPTY:
+                case EMPTY_NEUTRAL:
+                    continue;
+
+                case WHITE_DEAD:
+                case EMPTY_BLACK:
+                    /* black territory */
+                    x = i % board_size;
+                    y = i / board_size;
+
+                    if (tb.length() < 1)
+                        tb = "TB";
+
+                    tb += "[";
+                    tb += (char)(x + (int)('a'));
+                    tb += (char)(y + (int)('a'));
+                    tb += "]";
+                    break;
+
+                case BLACK_DEAD:
+                case EMPTY_WHITE:
+                    /* white territory */
+                    x = i % board_size;
+                    y = i / board_size;
+
+                    if (tw.length() < 1)
+                        tw = "TW";
+
+                    tw += "[";
+                    tw += (char)(x + (int)('a'));
+                    tw += (char)(y + (int)('a'));
+                    tw += "]";
+                    break;
+            }
+        }
+
+        return tw + tb;
+    }
+
     @Override
     public String get_sgf() {
         ArrayList<GoAction> actions = rule.get_action_history();
         int i;
 
         String sgf_string = "(;GM[1]FF[4]CA[UTF-8]\n";
-        sgf_string += String.format("SZ[%d]HA[0]KM[%.1f]\n\n", board_size, komi);
+        sgf_string += String.format("SZ[%d]HA[0]KM[%.1f]", board_size, komi);
+
+        if (resigned != null) {
+            sgf_string += "RE[";
+            sgf_string += (resigned == Player.BLACK)? "W+R" : "B+R";
+            sgf_string += "]";
+        } else if (calc_mode()) {
+            GoInfo info = get_info();
+
+            sgf_string += "RE[";
+
+            if (info.score_diff == 0) {
+                sgf_string += "Draw";
+            } else {
+                sgf_string += String.format("%c+%.1f",
+                    (info.score_diff > 0) ? 'W' : 'B',
+                    Math.abs(info.score_diff));
+            }
+            sgf_string += "]";
+        }
+
+        sgf_string += "\n\n";
 
         for (i = 0 ; i < actions.size() ; i++) {
             sgf_string += actions.get(i).get_sgf_string() + "\n";
         }
+
+        if (calc_mode()) {
+            String calc_info = get_sgf_from_calc_info();
+            sgf_string += "\n" + calc_info;
+        }
+
         sgf_string += "\n)";
 
         return sgf_string;
@@ -121,6 +209,8 @@ public class GoControlSingle extends GoControl {
     @Override
     public synchronized boolean load_sgf(String text) {
         ArrayList<SgfParser.ParsedItem> result;
+        ArrayList<Point> territory_black = new ArrayList<>();
+        ArrayList<Point> territory_white = new ArrayList<>();
         SgfParser parser = new SgfParser();
         Point p;
         boolean tmp = false;
@@ -191,7 +281,34 @@ public class GoControlSingle extends GoControl {
                     current_turn = Player.WHITE;
                     rule.pass(Player.WHITE);
                     break;
+
+                case TERRITORY_WHITE:
+                    territory_white.add((Point) item.content);
+                    break;
+
+                case TERRITORY_BLACK:
+                    territory_black.add((Point) item.content);
+                    break;
             }
+        }
+
+        /* Final territory information is available */
+        if (territory_black.size() > 0 || territory_white.size() > 0) {
+            ArrayList<NewBoardState> time_line = rule.get_time_line();
+            NewBoardState last = null;
+            try {
+                last = (NewBoardState) time_line.get(time_line.size() - 1).clone();
+            } catch (CloneNotSupportedException e) {}
+
+            for(Point each_p : territory_black) {
+                last.mark_territory(each_p.x, each_p.y, 0);
+            }
+
+            for(Point each_p : territory_white) {
+                last.mark_territory(each_p.x, each_p.y, 1);
+            }
+
+            time_line.add(last);
         }
 
         Log.d("PARS", "Game data generation completed");
@@ -206,6 +323,10 @@ public class GoControlSingle extends GoControl {
         int pass;
 
         if (calc_mode()) {
+            return false;
+        }
+
+        if (!_isMyTurn()) {
             return false;
         }
 
@@ -230,6 +351,12 @@ public class GoControlSingle extends GoControl {
     @Override
     public synchronized boolean undo()
     {
+        if (resigned != null) {
+            resigned = null;
+            this.callback_receiver.callback_board_state_changed();
+            return true;
+        }
+
         if (calc_mode()) {
             rule.cancel_calc();
         }
@@ -324,10 +451,11 @@ public class GoControlSingle extends GoControl {
 
     @Override
     public synchronized void resign() {
-        if (current_turn == Player.BLACK) {
-            this.resigned = 1;
-        } else {
-            this.resigned = 0;
-        }
+        this.resigned = current_turn;
+    }
+
+    @Override
+    public Player is_resigned() {
+        return resigned;
     }
 }

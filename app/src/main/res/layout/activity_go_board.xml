@@ -45,25 +45,32 @@
         >
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
             android:text="Undo"
             android:id="@+id/button3"
             android:onClick="undo"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
             android:text="Pass"
             android:id="@+id/button6"
             android:onClick="pass"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
-            android:text="Save SGF"
+            android:text="Save"
             android:id="@+id/button4"
 	    android:onClick="save_SGF"/>
+
+        <Button
+            android:layout_width="75dp"
+            android:layout_height="wrap_content"
+            android:text="Resign"
+            android:id="@+id/btn_resign"
+            android:onClick="resign"/>
 
     </LinearLayout>
 

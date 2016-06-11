@@ -14,7 +14,8 @@ public interface GoMessageListener {
     int BLUTOOTH_COMM_MSG = 6;
     int BLUTOOTH_COMM_ACCEPTED_REQUEST = 7;
     int FRONTDOORACTIVITY_MSG_LOAD_END = 8;
-    int MSG_MAX = FRONTDOORACTIVITY_MSG_LOAD_END;
+    int SAVE_FILE_NAME_INPUT_FINISHED = 9;
+    int MSG_MAX = SAVE_FILE_NAME_INPUT_FINISHED;
 
 
     public final static String GAME_SETTING_MESSAGE =

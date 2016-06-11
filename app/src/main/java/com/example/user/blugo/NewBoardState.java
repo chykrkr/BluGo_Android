@@ -404,6 +404,44 @@ public class NewBoardState implements Parcelable{
         return result;
     }
 
+    public void mark_territory(int x, int y, int bw) {
+        /*
+        bw = 0 : black;
+        bw = 1 : white;
+         */
+
+        GoRule.BoardPosState state_from = get_state(pos[x + y * size]);
+        GoRule.BoardPosState state_to = GoRule.BoardPosState.EMPTY;
+
+        switch (state_from) {
+            case EMPTY:
+            case EMPTY_NEUTRAL:
+            case EMPTY_WHITE:
+            case EMPTY_BLACK:
+                state_to = (bw == 0)?
+                    GoRule.BoardPosState.EMPTY_BLACK :
+                    GoRule.BoardPosState.EMPTY_WHITE;
+                break;
+
+            case BLACK:
+            case BLACK_DEAD:
+                state_to = (bw == 0)?
+                    GoRule.BoardPosState.BLACK :
+                    GoRule.BoardPosState.BLACK_DEAD;
+                break;
+
+            case WHITE:
+            case WHITE_DEAD:
+                state_to = (bw == 0)?
+                    GoRule.BoardPosState.WHITE_DEAD :
+                    GoRule.BoardPosState.WHITE;
+                break;
+        }
+
+        if (state_from != state_to)
+            pos[x + y * size] = combine_to_int(get_group_id(pos[x + y * size]), state_to);
+    }
+
     public void cancel_calc()
     {
         int i, j;
@@ -823,6 +861,8 @@ public class NewBoardState implements Parcelable{
         wcount.set(wcount_v);bcount.set(bcount_v);
     }
 
+
+    /* Implementations for Parcelable interface */
     @Override
     public int describeContents() {
         return 0;

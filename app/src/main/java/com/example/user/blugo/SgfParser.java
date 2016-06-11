@@ -20,6 +20,8 @@ public class SgfParser {
         BLACK_PUT,
         WHITE_PASS,
         BLACK_PASS,
+        TERRITORY_WHITE,
+        TERRITORY_BLACK,
         UNKNOWN,
     }
 
@@ -30,6 +32,8 @@ public class SgfParser {
         "B",
         "????",
         "????",
+        "TW",
+        "TB",
         "????",
     };
 
@@ -41,7 +45,9 @@ public class SgfParser {
     //private static final Pattern semicolon = Pattern.compile("(?m);([^;]*)");
     private static final Pattern semicolon = Pattern.compile(";([^;]*)");
     //private static final Pattern command = Pattern.compile("(?m)([A-Z]+)\\[(.*?)\\]");
-    private static final Pattern command = Pattern.compile("([A-Z]+)\\[(.*?)\\]");
+    //private static final Pattern command = Pattern.compile("([A-Z]+)\\[(.*?)\\]");
+    private static final Pattern command = Pattern.compile("([A-Z]+)((?:\\[.*?\\])+)");
+    private static final Pattern options = Pattern.compile("\\[(.*?)\\]");
     private static final Pattern position = Pattern.compile("^[a-zA-Z][a-zA-Z]$");
 
     public ArrayList<ParsedItem> parse(String sgf_string) {
@@ -190,18 +196,104 @@ public class SgfParser {
         return parsed;
     }
 
+    private ParsedItem parse_territory_black(String opt)
+    {
+        ParsedItem parsed = null;
+        char c;
+        Point p;
+        int x, y;
+
+        Matcher m = position.matcher(opt);
+
+        if (!m.find())
+            return null;
+
+        c = opt.charAt(0);
+        if (c >= 'a' && c <= 'z') {
+            x = (int) c -  (int) 'a';
+        } else {
+            x = (int) c -  (int) 'A' + 25;
+        }
+
+        c = opt.charAt(1);
+        if (c >= 'a' && c <= 'z') {
+            y = (int) c -  (int) 'a';
+        } else {
+            y = (int) c - (int) 'A' + 25;
+        }
+
+        p = new Point(x, y);
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.TERRITORY_BLACK;
+        parsed.content = p;
+
+        return parsed;
+    }
+
+    private ParsedItem parse_territory_white(String opt)
+    {
+        ParsedItem parsed = null;
+        char c;
+        Point p;
+        int x, y;
+
+        Matcher m = position.matcher(opt);
+
+        if (!m.find())
+            return null;
+
+        c = opt.charAt(0);
+        if (c >= 'a' && c <= 'z') {
+            x = (int) c -  (int) 'a';
+        } else {
+            x = (int) c -  (int) 'A' + 25;
+        }
+
+        c = opt.charAt(1);
+        if (c >= 'a' && c <= 'z') {
+            y = (int) c -  (int) 'a';
+        } else {
+            y = (int) c - (int) 'A' + 25;
+        }
+
+        p = new Point(x, y);
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.TERRITORY_WHITE;
+        parsed.content = p;
+
+        return parsed;
+    }
+
+    private ArrayList<String> split_options(String text)
+    {
+	ArrayList<String> result = new ArrayList<>();
+	Matcher m = options.matcher(text);
+
+	while (m.find()) {
+	    result.add(m.group(1));
+	}
+
+        return result;
+    }
+
     private ArrayList<ParsedItem> find_commands(String text)
     {
-        String cmd, opt;
+        String cmd, opt_string, opt;
         Matcher m = command.matcher(text);
         ItemType type = ItemType.UNKNOWN;
         ArrayList<ParsedItem> parsed_items = new ArrayList<>();
         ParsedItem parsed = null;
         int i;
+	ArrayList<String> opts;
 
         while (m.find()) {
             cmd = m.group(1);
-            opt = m.group(2);
+            opt_string = m.group(2);
+
+	    opts = split_options(opt_string);
+	    opt = opts.get(0);
 
             type = ItemType.UNKNOWN;
 
@@ -214,15 +306,15 @@ public class SgfParser {
 
             switch (type) {
                 case BOARD_SIZE:
-                    parsed = parse_opt_board_size(opt);
-                    if (parsed != null)
-                        parsed_items.add(parsed);
+		    parsed = parse_opt_board_size(opt);
+		    if (parsed != null)
+			parsed_items.add(parsed);
                     break;
 
                 case KOMI:
-                    parsed = parse_opt_komi(opt);
-                    if (parsed != null)
-                        parsed_items.add(parsed);
+		    parsed = parse_opt_komi(opt);
+		    if (parsed != null)
+			parsed_items.add(parsed);
                     break;
 
                 case WHITE_PUT:
@@ -235,6 +327,22 @@ public class SgfParser {
                     parsed = parse_black_put(opt);
                     if (parsed != null)
                         parsed_items.add(parsed);
+                    break;
+
+                case TERRITORY_BLACK:
+                    for (String each_opt : opts) {
+                        parsed = parse_territory_black(each_opt);
+                        if (parsed != null)
+                            parsed_items.add(parsed);
+                    }
+                    break;
+
+                case TERRITORY_WHITE:
+                    for (String each_opt : opts) {
+                        parsed = parse_territory_white(each_opt);
+                        if (parsed != null)
+                            parsed_items.add(parsed);
+                    }
                     break;
             }
 

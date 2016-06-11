@@ -138,7 +138,7 @@ public abstract class GoControl {
         /*white final score - black final score */
         public float score_diff = 0.0f;
 
-        public int resigned = -1;
+        public Player resigned = null;
 
         public float komi = 6.5f;
         public int turn_num = 0;
@@ -159,6 +159,7 @@ public abstract class GoControl {
     public abstract boolean pass();
     public abstract boolean undo();
     public abstract void resign();
+    public abstract Player is_resigned();
 
     public abstract GoInfo get_info();
 

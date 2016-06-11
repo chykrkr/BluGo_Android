@@ -132,13 +132,22 @@ public class GoRuleJapan extends GoRule {
     @Override
     public void cancel_calc()
     {
-        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
-        state.cancel_calc();
+        new_timeline.remove(new_timeline.size() - 1);
     }
 
     @Override
     public void prepare_calc() {
-        NewBoardState state = new_timeline.get(new_timeline.size() - 1);
+        NewBoardState state = null;
+
+        /* copy time line */
+        try {
+            NewBoardState tmp = new_timeline.get(new_timeline.size() - 1);
+            state = (NewBoardState) (tmp.clone());
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
         state.prepare_calc();
+
+        new_timeline.add(state);
     }
 }

@@ -154,11 +154,7 @@ public class GoControlBluetooth extends GoControlSingle{
         if (comm == null)
             return;
 
-        if (this.my_turn == Player.BLACK) {
-            this.resigned = 1;
-        } else {
-            this.resigned = 0;
-        }
+        this.resigned = my_turn;
 
         comm.write(BlutoothMsgParser.make_message(BlutoothMsgParser.MsgType.RESIGN,
             null
@@ -167,9 +163,9 @@ public class GoControlBluetooth extends GoControlSingle{
 
     public synchronized void opponent_resigned() {
         if (this.my_turn == Player.BLACK) {
-            this.resigned = 0;
+            this.resigned = Player.WHITE;
         } else {
-            this.resigned = 1;
+            this.resigned = Player.BLACK;
         }
     }
 

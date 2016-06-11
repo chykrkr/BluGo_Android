@@ -1,7 +1,9 @@
 package com.example.user.blugo;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Environment;
 import android.os.Handler;
@@ -10,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 
@@ -19,6 +22,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, Handler.Callback, GoBoardViewListener {
     private GoBoardView gv;
@@ -36,6 +42,18 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
         GoControl.GoInfo info =  single_game.get_info();
         float score_diff;
         float white_final, black_final;
+
+        GoControl.Player resigned = null;
+
+        resigned = single_game.is_resigned();
+
+        if (resigned != null) {
+            if (resigned == GoControl.Player.BLACK) {
+                return "W+R";
+            } else {
+                return "B+R";
+            }
+        }
 
         if (single_game.calc_mode()) {
             white_final = info.white_score + info.black_dead + info.komi;
@@ -118,35 +136,42 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
     public void save_SGF(View view)
     {
-        String app_name;
-        String sgf_text;
+        String file_name;
+        Calendar cal = Calendar.getInstance();
 
-        app_name = getApplicationContext().getString(getApplicationContext().getApplicationInfo().labelRes);
+        AlertDialog.Builder builder;
+        final EditText file_name_input = new EditText(this);
 
-        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Log.d("TEST", "External storage not mounted");
-            return;
-        }
+        file_name = String.format(
+            "%04d%02d%02d_%02d%02d%02d",
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DATE),
+            cal.get(Calendar.HOUR_OF_DAY),
+            cal.get(Calendar.MINUTE),
+            cal.get(Calendar.SECOND));
 
-        String path = Environment.getExternalStorageDirectory() + File.separator + app_name;
-        File dir = new File(path);
-        if (!dir.exists()) {
-            if (!dir.mkdirs())
-                Log.d("TEST", "Directory creation failed");
-        }
+        file_name_input.setText(file_name);
 
-        path += File.separator + app_name;
+        builder = new AlertDialog.Builder(this);
+        builder.setView(file_name_input)
+            .setTitle("Input save file name")
+            .setCancelable(false)
+            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Message msg;
+                    msg = Message.obtain(GoBoardActivity.this.msg_handler,
+                        GoMessageListener.SAVE_FILE_NAME_INPUT_FINISHED,
+                        file_name_input.getText().toString());
 
-        sgf_text = single_game.get_sgf();
+                    GoBoardActivity.this.msg_handler.sendMessage(msg);
+                }
+            })
+            .setNegativeButton("CANCEL", null);
 
-	FileOutputStream os;
-	try {
-	    os = new FileOutputStream(path + "test.sgf");
-	    os.write(sgf_text.getBytes("UTF-8"));
-	    os.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 
     @Override
@@ -211,13 +236,56 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
                 txt_info.setText(get_info_text());
                 return true;
+
+            case GoMessageListener.SAVE_FILE_NAME_INPUT_FINISHED:
+                save_sgf_file_as((String)msg.obj, true);
+                break;
         }
 
         return false;
     }
 
+    private void save_sgf_file_as(String file_name, boolean add_extension)
+    {
+        String app_name;
+        String sgf_text;
+
+        app_name = getApplicationContext().getString(getApplicationContext().getApplicationInfo().labelRes);
+
+        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            Log.d("TEST", "External storage not mounted");
+            return;
+        }
+
+        String path = Environment.getExternalStorageDirectory() + File.separator + app_name;
+        File dir = new File(path);
+        if (!dir.exists()) {
+            if (!dir.mkdirs())
+                Log.d("TEST", "Directory creation failed");
+        }
+
+        path += File.separator;
+
+        sgf_text = single_game.get_sgf();
+
+	FileOutputStream os;
+	try {
+	    os = new FileOutputStream(path + file_name + (add_extension? ".sgf": ""));
+	    os.write(sgf_text.getBytes("UTF-8"));
+	    os.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
+
     @Override
     public Handler get_msg_handler() {
         return msg_handler;
+    }
+
+    public void resign(View view)
+    {
+        single_game.resign();
+        txt_info.setText(get_info_text());
     }
 }

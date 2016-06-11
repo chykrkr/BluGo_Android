@@ -1,6 +1,8 @@
 package com.example.user.blugo;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
@@ -8,8 +10,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.FileInputStream;
 
@@ -26,8 +30,10 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
     private GoControlReview game = new GoControlReview();
     private ProgressDialog load_progress;
     private String sgf_path;
-    boolean need_to_load = false;
-    boolean loading_finished = false;
+    private boolean need_to_load = false;
+    private boolean loading_finished = false;
+
+    private Button button, btn_detail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +55,9 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
 
         need_to_load = true;
         loading_finished = false;
+
+        button = (Button) findViewById(R.id.btn_variation);
+        btn_detail = (Button) findViewById(R.id.btn_detail);
     }
 
     private void load_sgf()
@@ -98,6 +107,15 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         }).start();
     }
 
+    private void set_button_enables()
+    {
+        if (game.calc_mode()) {
+            button.setEnabled(false);
+        } else {
+            button.setEnabled(true);
+        }
+    }
+
     @Override
     public boolean handleMessage(Message msg) {
         String tmp;
@@ -109,7 +127,10 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
                 tmp = String.format("%d/%d", game.getCur_pos(), this.sbar.getMax());
                 text_pos.setText(tmp);
                 loading_finished = true;
-		load_progress.dismiss();
+
+                set_button_enables();
+
+                load_progress.dismiss();
 
                 return true;
 
@@ -139,6 +160,8 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         text = String.format("%d/%d", progress, this.sbar.getMax());
         text_pos.setText(text);
         game.goto_pos(progress);
+
+        set_button_enables();
     }
 
     @Override
@@ -183,5 +206,48 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
             return;
 
         sbar.setProgress(progress);
+    }
+
+    public void check_detail(View view)
+    {
+        AlertDialog.Builder builder;
+
+        String message = "";
+        GoControl.GoInfo info =  game.get_info();
+
+        if (game.calc_mode()) {
+            message += String.format("white dead : %d, black dead : %d\n",
+                info.white_dead, info.black_dead);
+            message += String.format("white house : %d, black house : %d\n",
+                info.white_score, info.black_score);
+            message += String.format("Live W on board : %d\n",
+                info.white_count);
+            message += String.format("Live B on board : %d\n",
+                info.black_count);
+            message += String.format("komi : %.1f\n", info.komi);
+            message += String.format("white total : %.1f\n", info.white_final);
+            message += String.format("black total : %.1f\n", info.black_final);
+            message += "Result : ";
+
+            if (info.score_diff == 0)
+                message += "DRAW";
+            else if (info.score_diff > 0)
+                message += String.format("White won by %.1f", info.score_diff);
+            else
+                message += String.format("Black won by %.1f", Math.abs(info.score_diff));
+        } else {
+            message += String.format("white dead : %d\n", info.white_dead);
+            message += String.format("black dead : %d\n", info.black_dead);
+            message += String.format("komi : %.1f\n", info.komi);
+        }
+
+        builder = new AlertDialog.Builder(this);
+        builder.setMessage(message)
+            .setTitle("Information")
+            .setCancelable(false)
+            .setPositiveButton("OK", null);
+
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 }

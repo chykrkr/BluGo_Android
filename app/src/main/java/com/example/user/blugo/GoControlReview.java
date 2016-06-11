@@ -45,6 +45,18 @@ public class GoControlReview extends GoControlSingle {
         return result;
     }
 
+    @Override
+    public boolean calc_mode() {
+        int diff = rule.get_time_line().size() - rule.get_action_history().size();
+        int last_pos = rule.get_time_line().size() - 1;
+
+        if (diff >= 2 && cur_pos >= last_pos) {
+            return true;
+        }
+
+        return false;
+    }
+
     public int get_last_pos()
     {
         ArrayList<NewBoardState> time_line;
@@ -86,7 +98,7 @@ public class GoControlReview extends GoControlSingle {
 
     public Point get_cur_coord() {
         ArrayList<GoAction> history = rule.get_action_history();
-        if (history.size() < 1 || cur_pos < 1)
+        if (history.size() < 1 || cur_pos < 1 || cur_pos >= history.size())
             return null;
 
         GoAction last_action;
