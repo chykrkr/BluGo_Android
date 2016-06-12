@@ -23,6 +23,9 @@ public class SgfParser {
         TERRITORY_WHITE,
         TERRITORY_BLACK,
         RULE,
+        ADD_BLACK,
+        ADD_WHITE,
+        HANDICAP,
         UNKNOWN,
     }
 
@@ -36,6 +39,9 @@ public class SgfParser {
         "TW",
         "TB",
         "RU",
+        "AB",
+        "AW",
+        "HA",
         "????",
     };
 
@@ -93,6 +99,27 @@ public class SgfParser {
         return parsed;
     }
 
+    private ParsedItem parse_opt_handicap(String opt)
+    {
+        ParsedItem parsed = null;
+        Integer value;
+
+        if (opt == null || opt.length() < 1)
+            return null;
+
+        try {
+            value = Integer.parseInt(opt);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.HANDICAP;
+        parsed.content = value;
+
+        return parsed;
+    }
+
     private ParsedItem parse_opt_komi(String opt)
     {
         ParsedItem parsed = null;
@@ -131,6 +158,84 @@ public class SgfParser {
         parsed = new ParsedItem();
         parsed.type = ItemType.RULE;
         parsed.content = rule;
+
+        return parsed;
+    }
+
+    private ParsedItem parse_add_white(String opt)
+    {
+        ParsedItem parsed = null;
+        char c;
+        Point p;
+        int x, y;
+
+        if (opt == null || opt.length() < 1) {
+            return  parsed;
+        }
+
+        Matcher m = position.matcher(opt);
+
+        if (!m.find())
+            return null;
+
+        c = opt.charAt(0);
+        if (c >= 'a' && c <= 'z') {
+            x = (int) c -  (int) 'a';
+        } else {
+            x = (int) c -  (int) 'A' + 25;
+        }
+
+        c = opt.charAt(1);
+        if (c >= 'a' && c <= 'z') {
+            y = (int) c -  (int) 'a';
+        } else {
+            y = (int) c - (int) 'A' + 25;
+        }
+
+        p = new Point(x, y);
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.ADD_WHITE;
+        parsed.content = p;
+
+        return parsed;
+    }
+
+    private ParsedItem parse_add_black(String opt)
+    {
+        ParsedItem parsed = null;
+        char c;
+        Point p;
+        int x, y;
+
+        if (opt == null || opt.length() < 1) {
+            return  parsed;
+        }
+
+        Matcher m = position.matcher(opt);
+
+        if (!m.find())
+            return null;
+
+        c = opt.charAt(0);
+        if (c >= 'a' && c <= 'z') {
+            x = (int) c -  (int) 'a';
+        } else {
+            x = (int) c -  (int) 'A' + 25;
+        }
+
+        c = opt.charAt(1);
+        if (c >= 'a' && c <= 'z') {
+            y = (int) c -  (int) 'a';
+        } else {
+            y = (int) c - (int) 'A' + 25;
+        }
+
+        p = new Point(x, y);
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.ADD_BLACK;
+        parsed.content = p;
 
         return parsed;
     }
@@ -340,6 +445,12 @@ public class SgfParser {
 			parsed_items.add(parsed);
                     break;
 
+                case HANDICAP:
+                    parsed = parse_opt_handicap(opt);
+                    if (parsed != null)
+                        parsed_items.add(parsed);
+                    break;
+
                 case WHITE_PUT:
                     parsed = parse_white_put(opt);
                     if (parsed != null)
@@ -350,6 +461,22 @@ public class SgfParser {
                     parsed = parse_black_put(opt);
                     if (parsed != null)
                         parsed_items.add(parsed);
+                    break;
+
+                case ADD_WHITE:
+                    for (String each_opt : opts) {
+                        parsed = parse_add_white(each_opt);
+                        if (parsed != null)
+                            parsed_items.add(parsed);
+                    }
+                    break;
+
+                case ADD_BLACK:
+                    for (String each_opt : opts) {
+                        parsed = parse_add_black(each_opt);
+                        if (parsed != null)
+                            parsed_items.add(parsed);
+                    }
                     break;
 
                 case RULE:

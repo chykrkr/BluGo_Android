@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.NumberPicker;
 import android.widget.TextView;
@@ -118,6 +119,15 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             single_game = new GoControlSingle(state.size,
                 bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
                 rule, start_turn);
+
+            /*
+                Because SGF format cannot save initial dead stone information.
+                We lose dead stone information after saving.
+                To avoid this problem, there are no choice but only copy entire board state list.
+                But you don't want to do that. Because we want to try out variation only.
+                */
+            Button btn_save = (Button) findViewById(R.id.btn_save);
+            btn_save.setEnabled(false);
         }
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);

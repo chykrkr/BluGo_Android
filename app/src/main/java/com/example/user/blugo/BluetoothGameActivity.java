@@ -96,21 +96,30 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         Log.d("TEST", "bw: " + bw);
 
         //game = new GoControlBluetooth(bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE);
-
+        /* Giving handicap = 0 returns null */
+        NewBoardState handicapped = NewBoardState.build_handicapped_game(setting.handicap);
         GoRule rule;
-
 
         switch (GoRule.RuleID.valueOf(setting.rule)) {
             case JAPANESE:
-                rule = new GoRuleJapan(setting.size);
+                if (handicapped != null)
+                    rule = new GoRuleJapan(handicapped);
+                else
+                    rule = new GoRuleJapan(setting.size);
                 break;
 
             case CHINESE:
-                rule = new GoRuleChinese(setting.size);
+                if (handicapped != null)
+                    rule = new GoRuleJapan(handicapped);
+                else
+                    rule = new GoRuleChinese(setting.size);
                 break;
 
             default:
-                rule = new GoRuleJapan(setting.size);
+                if (handicapped != null)
+                    rule = new GoRuleJapan(handicapped);
+                else
+                    rule = new GoRuleJapan(setting.size);
                 break;
         }
 

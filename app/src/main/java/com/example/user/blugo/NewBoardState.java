@@ -904,4 +904,26 @@ public class NewBoardState implements Parcelable{
         pos = new int[size * size];
         in.readIntArray(pos);
     }
+
+    /* handicap game builder */
+    public static NewBoardState build_handicapped_game(int handicap)
+    {
+        NewBoardState handicapped;
+        int i;
+
+        Point [] handicap_position = GoHandicap.getInstance().get_handicap(handicap);
+        if (handicap_position == null)
+            return null;
+
+        handicapped = new NewBoardState();
+
+        for (i = 0 ; i < handicap_position.length ; i++) {
+            handicapped.put_stone(
+                new GoControl.GoAction(GoControl.Player.BLACK,
+                    handicap_position[i],
+                    GoControl.Action.PUT));
+        }
+
+        return  handicapped;
+    }
 }

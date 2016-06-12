@@ -33,6 +33,8 @@ public class GoControlSingle extends GoControl {
      */
     protected Player resigned = null;
 
+    private int handicap = 0;
+
     GoControlSingle() {
         this(19, Player.BLACK, null, new GoRuleJapan(19),0);
     }
@@ -110,6 +112,42 @@ public class GoControlSingle extends GoControl {
         return true;
     }
 
+    private String get_sgf_for_added_stones()
+    {
+        String ab = "";
+        String aw = "";
+        /* get first board state */
+        ArrayList<NewBoardState> time_line = rule.get_time_line();
+        NewBoardState state = time_line.get(0);
+        HashSet<GoControl.GoAction> actions = state.get_stones();
+
+        for (GoAction action : actions) {
+            switch (action.player) {
+                case BLACK:
+                    if (ab.length() < 1)
+                        ab = "AB";
+
+                    ab += "[";
+                    ab += (char)(action.where.x + (int)('a'));
+                    ab += (char)(action.where.y + (int)('a'));
+                    ab += "]";
+                    break;
+
+                case WHITE:
+                    if (aw.length() < 1)
+                        aw = "AW";
+
+                    aw += "[";
+                    aw += (char)(action.where.x + (int)('a'));
+                    aw += (char)(action.where.y + (int)('a'));
+                    aw += "]";
+                    break;
+            }
+        }
+
+        return ab + aw;
+    }
+
     private String get_sgf_from_calc_info()
     {
         int i, x, y;
@@ -169,7 +207,7 @@ public class GoControlSingle extends GoControl {
         int i;
 
         String sgf_string = "(;GM[1]FF[4]CA[UTF-8]\n";
-        sgf_string += String.format("SZ[%d]HA[0]KM[%.1f]", board_size, komi);
+        sgf_string += String.format("SZ[%d]HA[%d]KM[%.1f]", board_size, handicap, komi);
         sgf_string += this.rule.get_rule_id().get_sgf_string();
 
         if (resigned != null) {
@@ -193,6 +231,8 @@ public class GoControlSingle extends GoControl {
 
         sgf_string += "\n\n";
 
+        sgf_string += get_sgf_for_added_stones() + "\n\n";
+
         for (i = 0 ; i < actions.size() ; i++) {
             sgf_string += actions.get(i).get_sgf_string() + "\n";
         }
@@ -212,9 +252,12 @@ public class GoControlSingle extends GoControl {
         ArrayList<SgfParser.ParsedItem> result;
         ArrayList<Point> territory_black = new ArrayList<>();
         ArrayList<Point> territory_white = new ArrayList<>();
+        ArrayList<GoAction> white_added = new ArrayList<>();
+        ArrayList<GoAction> black_added = new ArrayList<>();
         SgfParser parser = new SgfParser();
         Point p;
         GoRule.RuleID rule_id = GoRule.RuleID.JAPANESE;
+        NewBoardState state = null;
 
         pass_count = 0;
 
@@ -239,20 +282,53 @@ public class GoControlSingle extends GoControl {
                 case RULE:
                     rule_id = (GoRule.RuleID) item.content;
                     break;
+
+                case ADD_WHITE:
+                    white_added.add(new GoAction(Player.WHITE, (Point) item.content, Action.PUT));
+                    break;
+
+                case ADD_BLACK:
+                    white_added.add(new GoAction(Player.BLACK, (Point) item.content, Action.PUT));
+                    break;
             }
+        }
+
+        if (white_added.size() > 0) {
+            if (state == null)
+                state = new NewBoardState(this.board_size);
+
+            for (GoAction each_action : white_added)
+                state.put_stone(each_action);
+        }
+
+        if (black_added.size() > 0) {
+            if (state == null)
+                state = new NewBoardState(this.board_size);
+
+            for (GoAction each_action : black_added)
+                state.put_stone(each_action);
         }
 
         switch (rule_id) {
             case JAPANESE:
-                this.rule = new GoRuleJapan(this.board_size);
+                if (state == null)
+                    this.rule = new GoRuleJapan(this.board_size);
+                else
+                    this.rule = new GoRuleJapan(state);
                 break;
 
             case CHINESE:
-                this.rule = new GoRuleChinese(this.board_size);
+                if (state == null)
+                    this.rule = new GoRuleChinese(this.board_size);
+                else
+                    this.rule = new GoRuleChinese(state);
                 break;
 
             default:
-                this.rule = new GoRuleJapan(this.board_size);
+                if (state == null)
+                    this.rule = new GoRuleJapan(this.board_size);
+                else
+                    this.rule = new GoRuleJapan(state);
                 break;
         }
 
@@ -269,6 +345,10 @@ public class GoControlSingle extends GoControl {
 
                 case KOMI:
                     this.komi = (Float) item.content;
+                    break;
+
+                case HANDICAP:
+                    this.handicap = (Integer) item.content;
                     break;
 
                 case WHITE_PUT:
@@ -476,5 +556,13 @@ public class GoControlSingle extends GoControl {
     @Override
     public Player is_resigned() {
         return resigned;
+    }
+
+    public int getHandicap() {
+        return handicap;
+    }
+
+    public void setHandicap(int handicap) {
+        this.handicap = handicap;
     }
 }
