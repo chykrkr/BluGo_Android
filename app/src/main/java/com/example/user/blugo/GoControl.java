@@ -163,6 +163,10 @@ public abstract class GoControl {
 
     public abstract GoInfo get_info();
 
+    public abstract GoRule.RuleID get_rule();
+
+    public abstract GoPlaySetting get_game_setting();
+
     public void new_game() {
 
     }

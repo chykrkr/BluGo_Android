@@ -83,6 +83,7 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
     protected void onCreate(Bundle savedInstanceState) {
         GoRule rule;
         NewBoardState state;
+        GoPlaySetting setting;
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_go_board);
@@ -96,11 +97,27 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             single_game = new GoControlSingle();
         } else {
             state = bundle.getParcelable(ReviewGameActivity.MSG_BOARD_STATE);
+            setting = bundle.getParcelable(ReviewGameActivity.MSG_SETTING);
             int bw = bundle.getInt(ReviewGameActivity.MSG_CURRENT_TURN);
             int start_turn = bundle.getInt(ReviewGameActivity.MSG_START_TURNNO);
+
+            switch (GoRule.RuleID.valueOf(setting.rule)) {
+                case JAPANESE:
+                    rule = new GoRuleJapan(state);
+                    break;
+
+                case CHINESE:
+                    rule = new GoRuleChinese(state);
+                    break;
+
+                default:
+                    rule = new GoRuleJapan(state);
+                    break;
+            }
+
             single_game = new GoControlSingle(state.size,
                 bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
-                new GoRuleJapan(state), start_turn);
+                rule, start_turn);
         }
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
@@ -136,42 +153,7 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
     public void save_SGF(View view)
     {
-        String file_name;
-        Calendar cal = Calendar.getInstance();
-
-        AlertDialog.Builder builder;
-        final EditText file_name_input = new EditText(this);
-
-        file_name = String.format(
-            "%04d%02d%02d_%02d%02d%02d",
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.DATE),
-            cal.get(Calendar.HOUR_OF_DAY),
-            cal.get(Calendar.MINUTE),
-            cal.get(Calendar.SECOND));
-
-        file_name_input.setText(file_name);
-
-        builder = new AlertDialog.Builder(this);
-        builder.setView(file_name_input)
-            .setTitle("Input save file name")
-            .setCancelable(false)
-            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    Message msg;
-                    msg = Message.obtain(GoBoardActivity.this.msg_handler,
-                        GoMessageListener.SAVE_FILE_NAME_INPUT_FINISHED,
-                        file_name_input.getText().toString());
-
-                    GoBoardActivity.this.msg_handler.sendMessage(msg);
-                }
-            })
-            .setNegativeButton("CANCEL", null);
-
-        AlertDialog alert = builder.create();
-        alert.show();
+        GoActivityUtil.getInstance().save_sgf(this, single_game);
     }
 
     @Override
@@ -236,46 +218,9 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
                 txt_info.setText(get_info_text());
                 return true;
-
-            case GoMessageListener.SAVE_FILE_NAME_INPUT_FINISHED:
-                save_sgf_file_as((String)msg.obj, true);
-                break;
         }
 
         return false;
-    }
-
-    private void save_sgf_file_as(String file_name, boolean add_extension)
-    {
-        String app_name;
-        String sgf_text;
-
-        app_name = getApplicationContext().getString(getApplicationContext().getApplicationInfo().labelRes);
-
-        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Log.d("TEST", "External storage not mounted");
-            return;
-        }
-
-        String path = Environment.getExternalStorageDirectory() + File.separator + app_name;
-        File dir = new File(path);
-        if (!dir.exists()) {
-            if (!dir.mkdirs())
-                Log.d("TEST", "Directory creation failed");
-        }
-
-        path += File.separator;
-
-        sgf_text = single_game.get_sgf();
-
-	FileOutputStream os;
-	try {
-	    os = new FileOutputStream(path + file_name + (add_extension? ".sgf": ""));
-	    os.write(sgf_text.getBytes("UTF-8"));
-	    os.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
     }
 
     @Override

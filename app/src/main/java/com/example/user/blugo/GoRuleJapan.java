@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by user on 2016-06-02.
  */
 public class GoRuleJapan extends GoRule {
-    private ArrayList<NewBoardState> new_timeline = new ArrayList<>();
+    protected ArrayList<NewBoardState> new_timeline = new ArrayList<>();
     private ArrayList<GoControl.GoAction> action_history = new ArrayList<>();
     private int seq_no = 0;
 
@@ -114,19 +114,23 @@ public class GoRuleJapan extends GoRule {
     }
 
     @Override
-    public void get_dead(AtomicInteger white, AtomicInteger black) {
+    public void get_dead(GoControl.GoInfo info) {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
-        white.set(state.white_dead);
-        black.set(state.black_dead);
+
+        info.white_dead = state.white_dead;
+        info.black_dead = state.black_dead;
     }
 
     @Override
-    public void get_score(AtomicInteger white, AtomicInteger black,
-                          AtomicInteger add_wd, AtomicInteger add_bd,
-                          AtomicInteger wcount, AtomicInteger bcount)
+    public void get_score(GoControl.GoInfo info)
     {
         NewBoardState state = new_timeline.get(new_timeline.size() - 1);
-        state.get_score(white, black, add_wd, add_bd, wcount, bcount);
+        state.get_score(info);
+
+        /* japanese counting */
+        info.white_final = info.white_score + info.black_dead + info.komi;
+        info.black_final = info.black_score + info.white_dead;
+        info.score_diff = info.white_final - info.black_final;
     }
 
     @Override
@@ -149,5 +153,10 @@ public class GoRuleJapan extends GoRule {
         state.prepare_calc();
 
         new_timeline.add(state);
+    }
+
+    @Override
+    public RuleID get_rule_id() {
+        return RuleID.JAPANESE;
     }
 }

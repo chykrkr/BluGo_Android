@@ -96,8 +96,26 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         Log.d("TEST", "bw: " + bw);
 
         //game = new GoControlBluetooth(bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE);
+
+        GoRule rule;
+
+
+        switch (GoRule.RuleID.valueOf(setting.rule)) {
+            case JAPANESE:
+                rule = new GoRuleJapan(setting.size);
+                break;
+
+            case CHINESE:
+                rule = new GoRuleChinese(setting.size);
+                break;
+
+            default:
+                rule = new GoRuleJapan(setting.size);
+                break;
+        }
+
         game = new GoControlBluetooth(setting.size, setting.komi,
-            setting.handicap, new GoRuleJapan(setting.size),
+            setting.handicap, rule,
             bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE);
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
@@ -450,5 +468,10 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
     public void undo(View view)
     {
         game.undo();
+    }
+
+    public void save_SGF(View view)
+    {
+        GoActivityUtil.getInstance().save_sgf(this, game);
     }
 }

@@ -170,6 +170,7 @@ public class GoControlSingle extends GoControl {
 
         String sgf_string = "(;GM[1]FF[4]CA[UTF-8]\n";
         sgf_string += String.format("SZ[%d]HA[0]KM[%.1f]", board_size, komi);
+        sgf_string += this.rule.get_rule_id().get_sgf_string();
 
         if (resigned != null) {
             sgf_string += "RE[";
@@ -213,7 +214,7 @@ public class GoControlSingle extends GoControl {
         ArrayList<Point> territory_white = new ArrayList<>();
         SgfParser parser = new SgfParser();
         Point p;
-        boolean tmp = false;
+        GoRule.RuleID rule_id = GoRule.RuleID.JAPANESE;
 
         pass_count = 0;
 
@@ -224,8 +225,8 @@ public class GoControlSingle extends GoControl {
         this.current_turn = Player.BLACK;
         this.rule = null;
 
-        /* Two phase first we should get board size first */
-        tmp = false;
+        /* Two phase. we should get board size first */
+
         /* default board size if we cannot found board size information */
         this.board_size = 19;
         for (SgfParser.ParsedItem item : result) {
@@ -233,16 +234,28 @@ public class GoControlSingle extends GoControl {
                 case BOARD_SIZE:
                     Integer size = (Integer) item.content;
                     this.board_size = size;
-                    /* Leave out of loop as soon as possible */
-                    tmp = true;
+                    break;
+
+                case RULE:
+                    rule_id = (GoRule.RuleID) item.content;
                     break;
             }
+        }
 
-            if (tmp == true)
+        switch (rule_id) {
+            case JAPANESE:
+                this.rule = new GoRuleJapan(this.board_size);
+                break;
+
+            case CHINESE:
+                this.rule = new GoRuleChinese(this.board_size);
+                break;
+
+            default:
+                this.rule = new GoRuleJapan(this.board_size);
                 break;
         }
 
-        this.rule = new GoRuleJapan(this.board_size);
 
         for (SgfParser.ParsedItem item : result) {
             switch (item.type) {
@@ -385,37 +398,43 @@ public class GoControlSingle extends GoControl {
     @Override
     public GoInfo get_info() {
         GoInfo info = new GoInfo();
-        AtomicInteger value1 = new AtomicInteger(0), value2  = new AtomicInteger(0);
-        AtomicInteger value3 = new AtomicInteger(0), value4  = new AtomicInteger(0);
-        AtomicInteger value5 = new AtomicInteger(0), value6  = new AtomicInteger(0);
+
         info.turn = this.current_turn;
         info.komi = this.komi;
 
-        rule.get_dead(value1, value2);
-        info.white_dead = value1.get();
-        info.black_dead = value2.get();
-
         if (calc_mode()) {
-            rule.get_score(value1, value2, value3, value4, value5, value6);
-            info.white_score = value1.get();
-            info.black_score = value2.get();
-            info.white_dead += value3.get();
-            info.black_dead += value4.get();
-            info.white_count += value5.get();
-            info.black_count += value6.get();
+            rule.get_score(info);
+        } else {
+            rule.get_dead(info);
         }
 
         ArrayList<GoAction> history = rule.get_action_history();
         info.turn_num = history.size() + 1 + start_turn;
 
-        /* japanese counting */
-        info.white_final = info.white_score + info.black_dead + info.komi;
-        info.black_final = info.black_score + info.white_dead;
-        info.score_diff = info.white_final - info.black_final;
-
         info.resigned = this.resigned;
 
         return info;
+    }
+
+    @Override
+    public GoRule.RuleID get_rule() {
+        if (this.rule == null)
+            return null;
+
+        return this.rule.get_rule_id();
+    }
+
+    @Override
+    public GoPlaySetting get_game_setting() {
+        GoPlaySetting setting = new GoPlaySetting();
+
+        setting.rule = this.get_rule().getValue();
+        setting.komi = this.komi;
+        setting.size = this.board_size;
+        // setting.wb;
+        // setting.handicap;
+
+        return setting;
     }
 
     @Override

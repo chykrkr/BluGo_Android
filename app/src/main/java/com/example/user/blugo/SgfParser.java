@@ -22,6 +22,7 @@ public class SgfParser {
         BLACK_PASS,
         TERRITORY_WHITE,
         TERRITORY_BLACK,
+        RULE,
         UNKNOWN,
     }
 
@@ -34,6 +35,7 @@ public class SgfParser {
         "????",
         "TW",
         "TB",
+        "RU",
         "????",
     };
 
@@ -108,6 +110,27 @@ public class SgfParser {
         parsed = new ParsedItem();
         parsed.type = ItemType.KOMI;
         parsed.content = value;
+
+        return parsed;
+    }
+
+    private ParsedItem parse_rule(String opt)
+    {
+        ParsedItem parsed = null;
+        GoRule.RuleID rule = GoRule.RuleID.JAPANESE;
+
+        if (opt == null || opt.length() < 1)
+            return null;
+
+        if (opt.compareToIgnoreCase("japanese") == 0) {
+            rule = GoRule.RuleID.JAPANESE;
+        } else if (opt.compareToIgnoreCase("chinese") == 0) {
+            rule = GoRule.RuleID.CHINESE;
+        }
+
+        parsed = new ParsedItem();
+        parsed.type = ItemType.RULE;
+        parsed.content = rule;
 
         return parsed;
     }
@@ -325,6 +348,12 @@ public class SgfParser {
 
                 case BLACK_PUT:
                     parsed = parse_black_put(opt);
+                    if (parsed != null)
+                        parsed_items.add(parsed);
+                    break;
+
+                case RULE:
+                    parsed = parse_rule(opt);
                     if (parsed != null)
                         parsed_items.add(parsed);
                     break;

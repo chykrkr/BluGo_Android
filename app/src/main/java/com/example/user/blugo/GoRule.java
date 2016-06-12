@@ -48,6 +48,54 @@ public abstract class GoRule {
         }
     }
 
+    public enum RuleID {
+        JAPANESE(0x00),
+        CHINESE(0x01);
+
+        private final int value;
+
+        private RuleID(int value) {
+            this.value = value;
+        }
+
+        public static RuleID valueOf(int type)
+        {
+            /*
+            Enumeration values must be sequential or else
+            ArrayIndexoutofbound exeception may be thrown.
+            */
+            return (RuleID) RuleID.values()[type];
+        }
+
+        public int getValue()
+        {
+            return value;
+        }
+
+        public String get_sgf_string()
+        {
+            String sgf = "RU[";
+
+            switch (valueOf(value)) {
+                case JAPANESE:
+                    sgf += "Japanese";
+                    break;
+
+                case CHINESE:
+                    sgf += "Chinese";
+                    break;
+
+                default:
+                    sgf += "Japanese";
+                    break;
+            }
+
+            sgf += "]";
+
+            return sgf;
+        }
+    }
+
     public static class BoardPos {
         BoardPosState state = BoardPosState.EMPTY;
         int group_id = 0;
@@ -75,9 +123,8 @@ public abstract class GoRule {
     public abstract boolean undo();
     public abstract void cancel_calc();
     public abstract void prepare_calc();
+    public abstract RuleID get_rule_id();
 
-    public abstract void get_dead(AtomicInteger white, AtomicInteger black);
-    public abstract void get_score(AtomicInteger white, AtomicInteger black,
-                          AtomicInteger add_wd, AtomicInteger add_bd,
-                          AtomicInteger wcount, AtomicInteger bcount);
+    public abstract void get_dead(GoControl.GoInfo info);
+    public abstract void get_score(GoControl.GoInfo info);
 }

@@ -7,7 +7,7 @@ import android.os.Parcelable;
  * Created by user on 2016-06-09.
  */
 public class GoPlaySetting implements Parcelable{
-    public int rule = 0; /* 0:japna, 1:china */
+    public int rule = GoRule.RuleID.JAPANESE.getValue(); /* 0:japna, 1:china */
     public float komi = 6.5f;
     public int size = 19;
     public int wb = 0; /* 0: Random, 1: black, 2: white */

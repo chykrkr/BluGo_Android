@@ -813,9 +813,7 @@ public class NewBoardState implements Parcelable{
         }
     }
 
-    public void get_score(AtomicInteger white, AtomicInteger black,
-                          AtomicInteger add_wd, AtomicInteger add_bd,
-                          AtomicInteger wcount, AtomicInteger bcount)
+    public void get_score(GoControl.GoInfo info)
     {
         int i, j;
         int white_score = 0, black_score = 0;
@@ -856,9 +854,14 @@ public class NewBoardState implements Parcelable{
             }
         }
 
-        white.set(white_score); black.set(black_score);
-        add_wd.set(add_wd_count); add_bd.set(add_bd_count);
-        wcount.set(wcount_v);bcount.set(bcount_v);
+        info.white_score = white_score;
+        info.black_score = black_score;
+
+        info.white_dead = add_wd_count + this.white_dead;
+        info.black_dead = add_bd_count + this.black_dead;
+
+        info.white_count = wcount_v;
+        info.black_count = bcount_v;
     }
 
 
