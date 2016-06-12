@@ -1,6 +1,7 @@
 package com.example.user.blugo;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
@@ -16,14 +17,20 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class FrontDoorActivity extends AppCompatActivity implements FileChooser.FileSelectedListener,
-    Handler.Callback, DialogInterface.OnDismissListener, GoMessageListener {
+    Handler.Callback, DialogInterface.OnDismissListener, GoMessageListener,
+    AdapterView.OnItemSelectedListener {
     public Handler msg_handler = new Handler(this);
 
     public final static int REQUEST_ENABLE_BT = 1;
@@ -38,6 +45,11 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
     private boolean connection_established = false;
 
     private GoPlaySetting setting;
+
+    private TextView komi;
+    private Spinner sp_rule;
+    private Spinner sp_board_size;
+    private Spinner sp_handicap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +90,87 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     public void start_single_game(View view)
     {
-        Intent intent = new Intent(this, GoBoardActivity.class);
-        startActivity(intent);
+
+        AlertDialog alert;
+        LayoutInflater inflater = (LayoutInflater) this.getSystemService(LAYOUT_INFLATER_SERVICE);
+        View layout = inflater.inflate(R.layout.new_single_game, null);
+
+        komi = (TextView) layout.findViewById(R.id.num_komi);
+        komi.setText("6.5");
+
+        /* rule */
+        sp_rule = (Spinner) layout.findViewById(R.id.sp_rule);
+        List<String> rules = new ArrayList<String>();
+        rules.add("JAPANESE");
+        rules.add("CHINESE");
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, rules);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_rule.setAdapter(adapter);
+        sp_rule.setOnItemSelectedListener(this);
+
+        /* size : 19, 17, 15, 13, 11, 9, 7, 5, 3 */
+        sp_board_size = (Spinner) layout.findViewById(R.id.sp_board_size);
+        List<Integer> bd_size = new ArrayList<Integer>();
+
+        for (int i = 19 ; i >= 3 ; i -= 2) {
+            bd_size.add(i);
+        }
+
+        ArrayAdapter<Integer> bd_size_adapter = new ArrayAdapter<Integer>(this, android.R.layout.simple_spinner_item, bd_size);
+        bd_size_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_board_size.setAdapter(bd_size_adapter);
+        sp_board_size.setOnItemSelectedListener(this);
+
+
+        /* Handicap : 2, 3, 4, 5, 6, 7, 8, 9, 13, 16, 25 */
+        sp_handicap = (Spinner) layout.findViewById(R.id.sp_handicap);
+        List<Integer> handicap = new ArrayList<>();
+        handicap.add(0);
+        for (int i = 2 ; i <= 9 ; i++)
+            handicap.add(i);
+        handicap.add(13);
+        handicap.add(16);
+        handicap.add(25);
+        ArrayAdapter<Integer> handicap_adapter = new ArrayAdapter<Integer>(this, android.R.layout.simple_spinner_item, handicap);
+        bd_size_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sp_handicap.setAdapter(handicap_adapter);
+        sp_handicap.setOnItemSelectedListener(this);
+
+        AlertDialog.Builder builder;
+        builder = new AlertDialog.Builder(this);
+        builder
+            .setView(layout)
+            .setTitle("Game setting")
+            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Message msg;
+                    GoPlaySetting setting = new GoPlaySetting();
+
+                    setting.handicap = (Integer) sp_handicap.getSelectedItem();
+                    setting.size = (Integer) sp_board_size.getSelectedItem();
+                    setting.rule = sp_rule.getSelectedItemPosition();
+                    try {
+                        setting.komi = Float.parseFloat(komi.getText().toString());
+                    } catch (NumberFormatException e) {
+                        Log.d("EXP", "'" + komi.getText().toString() + "'" +
+                            " cannot be converted to float");
+                        setting.komi = (setting.rule == 0) ? 6.5f : 7.5f;
+                    }
+
+                    if (setting.handicap > 0 && setting.size < 19) {
+                        setting.handicap = 0;
+                    }
+
+                    msg = Message.obtain(FrontDoorActivity.this.msg_handler,
+                        SINGLE_GAME_SETTING_FINISHED, setting);
+                    FrontDoorActivity.this.msg_handler.sendMessage(msg);
+                }
+            })
+            .setNegativeButton("CANCEL", null);
+
+        alert = builder.create();
+        alert.show();
     }
 
     private Boolean enableBluetooth()
@@ -160,6 +251,8 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         BlutoothServerThread server;
         int my_color;
         Intent intent;
+        GoPlaySetting game_setting;
+        NewBoardState state;
 
         switch (msg.what) {
             case FRONTDOORACTIVITY_MSG_LOAD_END:
@@ -213,6 +306,28 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
             case GoMessageListener.BLUTOOTH_COMM_MSG:
                 BlutoothMsgParser.MsgParsed parsed = (BlutoothMsgParser.MsgParsed) msg.obj;
                 handle_comm_message(parsed);
+                break;
+
+            case GoMessageListener.SINGLE_GAME_SETTING_FINISHED:
+                game_setting = (GoPlaySetting) msg.obj;
+
+                intent = new Intent(this, GoBoardActivity.class);
+                bundle = new Bundle();
+
+                if (game_setting.handicap > 0)
+                    state = NewBoardState.build_handicapped_game(game_setting.handicap);
+                else
+                    state = new NewBoardState(game_setting.size);
+
+                bundle.putParcelable(ReviewGameActivity.MSG_BOARD_STATE, state);
+                bundle.putParcelable(ReviewGameActivity.MSG_SETTING, game_setting);
+                bundle.putInt(ReviewGameActivity.MSG_CURRENT_TURN, game_setting.handicap > 0 ? 1 : 0);
+                bundle.putInt(ReviewGameActivity.MSG_START_TURNNO, 0);
+                bundle.putBoolean(ReviewGameActivity.MSG_ENABLE_SAVE, true);
+
+                intent.putExtras(bundle);
+
+                startActivity(intent);
                 break;
         }
         return false;
@@ -340,5 +455,35 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
     @Override
     public Handler get_msg_handler() {
         return this.msg_handler;
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Integer value;
+        if (parent.equals(this.sp_rule)) {
+            if (position == 0) {
+                komi.setText("6.5");
+            } else {
+                komi.setText("7.5");
+            }
+        } else if (parent.equals(this.sp_board_size)) {
+            value = (Integer) parent.getItemAtPosition(position);
+            if (value != 19) {
+                sp_handicap.setSelection(0);
+            }
+        } else if (parent.equals(this.sp_handicap)) {
+            value = (Integer) parent.getItemAtPosition(position);
+            if (value != 0) {
+                /* Choose 19x19 */
+                sp_board_size.setSelection(0);
+                /* Set komi to 0 */
+                komi.setText("0");
+            }
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 }

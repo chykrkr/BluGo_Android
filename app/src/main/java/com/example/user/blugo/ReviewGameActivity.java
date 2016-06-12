@@ -25,6 +25,8 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
     public final static String MSG_CURRENT_TURN = "com.example.user.blugo.ReviewGameActivity.MSG_CURRENT_TURN";
     public final static String MSG_START_TURNNO = "com.example.user.blugo.ReviewGameActivity.MSG_START_TURNNO";
     public final static String MSG_SETTING = "com.example.user.blugo.ReviewGameActivity.MSG_SETTING";
+    public final static String MSG_ENABLE_SAVE = "com.example.user.blugo.ReviewGameActivity.MSG_ENABLE_SAVE";
+
     private GoBoardView gv;
     private SeekBar sbar;
     private TextView text_pos;
@@ -185,6 +187,7 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         bundle.putParcelable(MSG_SETTING, setting);
         bundle.putInt(MSG_CURRENT_TURN, game.getCurrent_turn() == GoControl.Player.BLACK ? 0 : 1);
         bundle.putInt(MSG_START_TURNNO, game.getCur_pos());
+        bundle.putBoolean(MSG_ENABLE_SAVE, false);
 
         intent.putExtras(bundle);
 

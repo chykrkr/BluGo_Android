@@ -51,12 +51,27 @@ public class GoControlSingle extends GoControl {
         this(board_size, current_turn, null, rule, start_turn);
     }
 
-    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule, int start_turn) {
+    GoControlSingle(int board_size, Player current_turn, float komi, int handicap, GoRule rule,
+                    int start_turn) {
+        this(board_size, current_turn, null, rule,
+            start_turn, komi, handicap);
+    }
+
+    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule,
+                    int start_turn) {
+        this(board_size, current_turn, callback_receiver, rule,
+        start_turn, 6.5f, 0);
+    }
+
+    GoControlSingle(int board_size, Player current_turn, Callback callback_receiver, GoRule rule,
+                    int start_turn, float komi, int handicap) {
         this.board_size = board_size;
         this.current_turn = current_turn;
         this.callback_receiver = callback_receiver;
         this.rule = rule;
         this.start_turn = start_turn;
+        this.komi = komi;
+        this.handicap = handicap;
     }
 
     private boolean _isMyTurn() {

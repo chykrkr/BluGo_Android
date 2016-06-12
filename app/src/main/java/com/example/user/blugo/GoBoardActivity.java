@@ -41,8 +41,6 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
     private String get_info_text() {
         String str, result;
         GoControl.GoInfo info =  single_game.get_info();
-        float score_diff;
-        float white_final, black_final;
 
         GoControl.Player resigned = null;
 
@@ -57,19 +55,16 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
         }
 
         if (single_game.calc_mode()) {
-            white_final = info.white_score + info.black_dead + info.komi;
-            black_final = info.black_score + info.white_dead;
-            score_diff = white_final - black_final;
-
-            if (score_diff == 0) {
+            if (info.score_diff == 0) {
                 result = "DRAW";
-            } else if (score_diff > 0) {
-                result = String.format("W+%.1f", score_diff);
+            } else if (info.score_diff > 0) {
+                result = String.format("W+%.1f", info.score_diff);
             } else {
-                result = String.format("B+%.1f", Math.abs(score_diff));
+                result = String.format("B+%.1f", Math.abs(info.score_diff));
             }
 
-            str = String.format("ws: %.1f, bs: %d, %s", white_final, (int) black_final, result);
+            str = String.format("ws: %.1f, bs: %d, %s",
+                info.white_final, (int) info.black_final, result);
         } else {
             str = String.format("%s(%d), wd: %d, bd: %d",
                 info.turn == GoControl.Player.WHITE? "W" : "B",
@@ -116,9 +111,15 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
                     break;
             }
 
+            /*
             single_game = new GoControlSingle(state.size,
                 bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
                 rule, start_turn);
+                */
+
+            single_game = new GoControlSingle(state.size,
+                bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
+            setting.komi, setting.handicap, rule, start_turn);
 
             /*
                 Because SGF format cannot save initial dead stone information.
@@ -126,8 +127,9 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
                 To avoid this problem, there are no choice but only copy entire board state list.
                 But you don't want to do that. Because we want to try out variation only.
                 */
+            boolean enable_save = bundle.getBoolean(ReviewGameActivity.MSG_ENABLE_SAVE);
             Button btn_save = (Button) findViewById(R.id.btn_save);
-            btn_save.setEnabled(false);
+            btn_save.setEnabled(enable_save);
         }
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
