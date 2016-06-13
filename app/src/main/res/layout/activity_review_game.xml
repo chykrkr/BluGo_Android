@@ -48,6 +48,8 @@
         android:layout_alignParentStart="true"
         android:layout_below="@+id/layout_top"/>
 
+
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -61,28 +63,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="&lt;"
-            android:id="@+id/button13"
+            android:id="@+id/btn_prev"
             android:textColor="#ffffff"
             android:background="#000000"
             android:textColorHighlight="#f6fe01"
             android:onClick="goto_prev_move"/>
-
-        <SeekBar
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/seek_pos"
-            android:layout_toRightOf="@id/button13"
-            android:layout_toLeftOf="@id/button14"
-            android:max="100"
-            android:layout_centerInParent="true"
-            android:indeterminate="false"/>
 
         <Button
             style="?android:attr/buttonStyleSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=">"
-            android:id="@+id/button14"
+            android:id="@+id/btn_next"
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
@@ -91,6 +83,23 @@
             android:background="#000000"
             android:textColorHighlight="#f6fe01"
             android:onClick="goto_next_move"/>
+
+        <SeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/seek_pos"
+            android:layout_toRightOf="@id/btn_prev"
+            android:layout_toLeftOf="@id/btn_next"
+            android:max="100"
+            android:layout_centerInParent="true"
+            android:indeterminate="false"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/text_pos"
+            android:layout_centerHorizontal="true"
+            android:textColor="#ffffff"/>
     </RelativeLayout>
 
 </RelativeLayout>
