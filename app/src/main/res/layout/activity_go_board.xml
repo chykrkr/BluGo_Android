@@ -6,10 +6,10 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingBottom="0dp"
     android:paddingLeft="0dp"
     android:paddingRight="0dp"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingTop="0dp"
     tools:context="com.example.user.blugo.GoBoardActivity"
     android:background="#000000"
     android:weightSum="1">
@@ -31,47 +31,53 @@
     </LinearLayout>
 
     <com.example.user.blugo.GoBoardView
-        android:layout_width="match_parent"
-        android:layout_height="270dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:id="@+id/go_board_view"
         app:exampleDrawable="@drawable/board"
         app:exampleString="Hello, GoBoardView"
         android:layout_weight="1.12"/>
 
-    <LinearLayout
-        android:orientation="horizontal"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        >
+        android:layout_height="wrap_content">
 
-        <Button
-            android:layout_width="70dp"
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Undo"
-            android:id="@+id/button3"
-            android:onClick="undo"/>
+            android:layout_centerInParent="true"
+            >
 
-        <Button
-            android:layout_width="70dp"
-            android:layout_height="wrap_content"
-            android:text="Pass"
-            android:id="@+id/button6"
-            android:onClick="pass"/>
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:text="Undo"
+                android:id="@+id/button3"
+                android:onClick="undo"/>
 
-        <Button
-            android:layout_width="70dp"
-            android:layout_height="wrap_content"
-            android:text="Save"
-            android:id="@+id/btn_save"
-	    android:onClick="save_SGF"/>
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:text="Pass"
+                android:id="@+id/button6"
+                android:onClick="pass"/>
 
-        <Button
-            android:layout_width="75dp"
-            android:layout_height="wrap_content"
-            android:text="Resign"
-            android:id="@+id/btn_resign"
-            android:onClick="resign"/>
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:id="@+id/btn_save"
+                android:onClick="save_SGF"/>
 
-    </LinearLayout>
+            <Button
+                android:layout_width="75dp"
+                android:layout_height="wrap_content"
+                android:text="Resign"
+                android:id="@+id/btn_resign"
+                android:onClick="resign"/>
+
+        </LinearLayout>
+    </RelativeLayout>
 
 </LinearLayout>
