@@ -125,7 +125,9 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
 
         game = new GoControlBluetooth(setting.size, setting.komi,
             setting.handicap, rule,
-            bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE);
+            bw == 0? GoControl.Player.BLACK : GoControl.Player.WHITE,
+            setting.handicap > 0? GoControl.Player.WHITE : GoControl.Player.BLACK
+            );
 
         gv = (GoBoardView) findViewById(R.id.go_board_view);
         gv.setGo_control(game);

@@ -14,11 +14,13 @@ public class GoControlBluetooth extends GoControlSingle{
     private boolean undo_waiting = false;
 
     GoControlBluetooth(Player my_turn) {
-	this(19, 6.5f, 0, new GoRuleJapan(19), my_turn);
+	this(19, 6.5f, 0, new GoRuleJapan(19), my_turn, Player.BLACK);
     }
 
-    GoControlBluetooth(int board_size, float komi, int handicap, GoRule rule, Player my_turn) {
-        super(board_size, Player.BLACK, rule);
+    GoControlBluetooth(int board_size, float komi, int handicap, GoRule rule, Player my_turn,
+                       Player start_turn) {
+        super(board_size, start_turn, rule);
+
 	this.komi = komi;
         this.my_turn = my_turn;
     }

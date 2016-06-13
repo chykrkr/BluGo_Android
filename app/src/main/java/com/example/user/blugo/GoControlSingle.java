@@ -35,6 +35,8 @@ public class GoControlSingle extends GoControl {
 
     private int handicap = 0;
 
+    private Object [] determined_result = null;
+
     GoControlSingle() {
         this(19, Player.BLACK, null, new GoRuleJapan(19),0);
     }
@@ -308,6 +310,7 @@ public class GoControlSingle extends GoControl {
             }
         }
 
+        /* Add default stones */
         if (white_added.size() > 0) {
             if (state == null)
                 state = new NewBoardState(this.board_size);
@@ -324,6 +327,7 @@ public class GoControlSingle extends GoControl {
                 state.put_stone(each_action);
         }
 
+        /* Set game rule */
         switch (rule_id) {
             case JAPANESE:
                 if (state == null)
@@ -347,7 +351,8 @@ public class GoControlSingle extends GoControl {
                 break;
         }
 
-
+        /* Parse remained*/
+        this.determined_result = null;
         for (SgfParser.ParsedItem item : result) {
             switch (item.type) {
                 /*
@@ -397,6 +402,9 @@ public class GoControlSingle extends GoControl {
                 case TERRITORY_BLACK:
                     territory_black.add((Point) item.content);
                     break;
+
+                case RESULT:
+                    this.determined_result = (Object [])item.content;
             }
         }
 
@@ -579,5 +587,41 @@ public class GoControlSingle extends GoControl {
 
     public void setHandicap(int handicap) {
         this.handicap = handicap;
+    }
+
+    public String get_determined_result_string()
+    {
+        String result = null;
+        String result_convert;
+
+        if (this.determined_result == null)
+            return "";
+
+        if (this.determined_result.length < 2)
+            return "";
+
+        if (determined_result[0] == null) {
+            return "Draw";
+        }
+
+        switch ((Player) determined_result[0]) {
+            case BLACK:
+                result = "Black won by ";
+                break;
+
+            case WHITE:
+                result = "White won by ";
+                break;
+        }
+
+        result_convert = (String) determined_result[1];
+
+        if (result_convert.compareToIgnoreCase("r") == 0) {
+            result_convert = "resign";
+        }
+
+        result += result_convert;
+
+        return result;
     }
 }

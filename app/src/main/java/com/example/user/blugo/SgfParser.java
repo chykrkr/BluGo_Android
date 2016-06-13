@@ -23,6 +23,7 @@ public class SgfParser {
         TERRITORY_WHITE,
         TERRITORY_BLACK,
         RULE,
+        RESULT,
         ADD_BLACK,
         ADD_WHITE,
         HANDICAP,
@@ -39,6 +40,7 @@ public class SgfParser {
         "TW",
         "TB",
         "RU",
+        "RE",
         "AB",
         "AW",
         "HA",
@@ -57,6 +59,7 @@ public class SgfParser {
     private static final Pattern command = Pattern.compile("([A-Z]+)((?:\\[.*?\\])+)");
     private static final Pattern options = Pattern.compile("\\[(.*?)\\]");
     private static final Pattern position = Pattern.compile("^[a-zA-Z][a-zA-Z]$");
+    private static final Pattern win_by = Pattern.compile("([BW])\\+(.*)");
 
     public ArrayList<ParsedItem> parse(String sgf_string) {
         ArrayList<ParsedItem> parsed_item = new ArrayList<>();
@@ -158,6 +161,45 @@ public class SgfParser {
         parsed = new ParsedItem();
         parsed.type = ItemType.RULE;
         parsed.content = rule;
+
+        return parsed;
+    }
+
+    private ParsedItem parse_result(String opt)
+    {
+        ParsedItem parsed = null;
+        Object [] result = new Object[2];
+
+        if (opt == null || opt.length() < 1)
+            return null;
+
+        if (opt.compareToIgnoreCase("draw") == 0) {
+            result[0] = null;
+            result[1] = opt;
+
+            parsed.content = result;
+            parsed.type = ItemType.RESULT;
+            return parsed;
+        }
+
+        Matcher m = win_by.matcher(opt);
+
+        if (!m.find())
+            return null;
+
+        String who_win = m.group(1);
+        String win_by_what = m.group(2);
+
+        if (who_win.equals("B")) {
+            result[0] = GoControl.Player.BLACK;
+        } else
+            result[0] = GoControl.Player.WHITE;
+
+        result[1] = win_by_what;
+
+        parsed = new ParsedItem();
+        parsed.content = result;
+        parsed.type = ItemType.RESULT;
 
         return parsed;
     }
@@ -499,6 +541,12 @@ public class SgfParser {
                         if (parsed != null)
                             parsed_items.add(parsed);
                     }
+                    break;
+
+                case RESULT:
+                    parsed = parse_result(opt);
+                    if (parsed != null)
+                        parsed_items.add(parsed);
                     break;
             }
 

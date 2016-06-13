@@ -29,7 +29,7 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
 
     private GoBoardView gv;
     private SeekBar sbar;
-    private TextView text_pos;
+    private TextView text_pos, text_result;
     private GoControlReview game = new GoControlReview();
     private ProgressDialog load_progress;
     private String sgf_path;
@@ -55,6 +55,7 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         sbar.setOnSeekBarChangeListener(this);
 
         text_pos = (TextView) findViewById(R.id.text_pos);
+        text_result = (TextView) findViewById(R.id.txt_result);
 
         need_to_load = true;
         loading_finished = false;
@@ -132,6 +133,8 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
                 loading_finished = true;
 
                 set_button_enables();
+
+                text_result.setText(game.get_determined_result_string());
 
                 load_progress.dismiss();
 

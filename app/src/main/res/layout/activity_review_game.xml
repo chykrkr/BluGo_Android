@@ -34,6 +34,14 @@
             android:id="@+id/btn_detail"
             android:onClick="check_detail"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:id="@+id/txt_result"
+            android:textColor="#ffffff"
+            android:gravity="center_horizontal"/>
+
     </LinearLayout>
 
     <com.example.user.blugo.GoBoardView

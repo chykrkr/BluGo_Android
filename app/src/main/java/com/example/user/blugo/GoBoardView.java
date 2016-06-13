@@ -42,7 +42,7 @@ public class GoBoardView extends View implements GoControl.Callback {
     private float mTextHeight;
 
     private final static int OPAQUE_ALPHA = 255;
-    private final static int GHOST_ALPHA = 50;
+    private final static int GHOST_ALPHA = 150;
 
 
     private Point ghost_pos = new Point(-1, -1);
@@ -290,29 +290,33 @@ public class GoBoardView extends View implements GoControl.Callback {
         /* draw GoBoard lines */
         boardline = new ShapeDrawable(new PathShape(path, board_canvas_w, board_canvas_h));
         boardline.getPaint().setColor(0xff000000);
-        boardline.getPaint().setStrokeWidth(3);
+        boardline.getPaint().setStrokeWidth(2);
         boardline.getPaint().setStyle(Paint.Style.STROKE);
         boardline.setBounds(board_canvas_x, board_canvas_y, board_canvas_x + board_canvas_w, board_canvas_y + board_canvas_h);
         boardline.draw(canvas);
 
+        int [] flower_pos;
+
         /* draw flower point */
         if (board_size >= 19) {
 
-            flower_point = new ShapeDrawable(new OvalShape());
-            flower_point.getPaint().setColor(0xff000000);
-
-
-            int [] flower_pos = new int[] {
+            flower_pos = new int[] {
                 3, 3, 9, 3, 15, 3,
                 3, 9, 9, 9, 15, 9,
                 3, 15, 9, 15, 15, 15
             };
+        } else {
+            flower_pos = new int[] {board_size / 2 , board_size/ 2 };
+        }
 
-            for (i = 0 ; i < flower_pos.length - 1;) {
-                draw_flower(canvas, flower_point, board_canvas_x, board_canvas_y,
-                    flower_pos[i], flower_pos[i + 1], board_canvas_w, board_canvas_h, (int) board_square_size);
-                i += 2;
-            }
+        flower_point = new ShapeDrawable(new OvalShape());
+        flower_point.getPaint().setColor(0xff000000);
+        flower_point.getPaint().setStrokeWidth(0);
+
+        for (i = 0 ; i < flower_pos.length - 1;) {
+            draw_flower(canvas, flower_point, board_canvas_x, board_canvas_y,
+                flower_pos[i], flower_pos[i + 1], board_canvas_w, board_canvas_h, (int) board_square_size);
+            i += 2;
         }
 
         boolean draw_ghost = false;
@@ -506,7 +510,7 @@ public class GoBoardView extends View implements GoControl.Callback {
 
         board_size = go_control.getBoardSize();
 
-        tmph = tmpw = square/7;
+        tmph = tmpw = 5;
 
         tmpx = x + square/2 + i * (width -  square)/(board_size - 1);
         tmpy = y + square/2 + j * (height -  square)/(board_size - 1);
