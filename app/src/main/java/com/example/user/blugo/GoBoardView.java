@@ -493,7 +493,7 @@ public class GoBoardView extends View implements GoControl.Callback {
         else
             image = res.getDrawable(R.drawable.go_w_no_bg);
 
-        tmph = tmpw = (int)(board_square_size / 2 * 0.9);
+        tmph = tmpw = (int)(board_square_size / 2);
 
         tmpx = board_canvas_x + start_p + board_square_size * i;
         tmpy = board_canvas_y + start_p + board_square_size * j;
@@ -515,17 +515,17 @@ public class GoBoardView extends View implements GoControl.Callback {
         path = new Path();
 
         tmp = start_p + board_square_size * i;
-        path.moveTo(tmp, start_p);
-        path.lineTo(tmp, end_p);
+        path.moveTo(tmp, 0);
+        path.lineTo(tmp, board_canvas_h);
 
         tmp = start_p + board_square_size * j;
-        path.moveTo(start_p, tmp);
-        path.lineTo(end_p, tmp);
+        path.moveTo(0, tmp);
+        path.lineTo(board_canvas_w, tmp);
 
         /* draw GoBoard lines */
         guid = new ShapeDrawable(new PathShape(path, board_canvas_w, board_canvas_h));
-        guid.getPaint().setColor(0xffff0000);
-        guid.getPaint().setStrokeWidth(3);
+        guid.getPaint().setColor(0xff0000ff);
+        guid.getPaint().setStrokeWidth(6);
         guid.getPaint().setStyle(Paint.Style.STROKE);
         guid.setBounds(board_canvas_x, board_canvas_y,
             board_canvas_x + board_canvas_w, board_canvas_y + board_canvas_h);

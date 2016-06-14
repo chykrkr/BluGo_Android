@@ -98,7 +98,7 @@ public class GoControlReview extends GoControlSingle {
 
     public Point get_cur_coord() {
         ArrayList<GoAction> history = rule.get_action_history();
-        if (history.size() < 1 || cur_pos < 1 || cur_pos >= history.size())
+        if (history.size() < 1 || cur_pos < 1 || cur_pos > history.size())
             return null;
 
         GoAction last_action;
