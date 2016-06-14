@@ -14,20 +14,26 @@ import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.TooManyListenersException;
 
 public class FrontDoorActivity extends AppCompatActivity implements FileChooser.FileSelectedListener,
     Handler.Callback, DialogInterface.OnDismissListener, GoMessageListener,
@@ -57,6 +63,9 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_front_door);
 
+        Toolbar my_tool_bar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(my_tool_bar);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Light_Dialog);
             dialog_rq_confirm = new Dialog(this,
@@ -74,7 +83,30 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         super.onDestroy();
     }
 
-    public void load_SGF(View view)
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.front_door_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_about:
+                // User chose the "Settings" item, show the app settings UI...
+                Toast.makeText(this, "menu test ...", Toast.LENGTH_SHORT).show();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+        public void load_SGF(View view)
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,

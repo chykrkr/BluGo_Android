@@ -230,19 +230,20 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
 
         String message = "";
         GoControl.GoInfo info =  game.get_info();
+        GoRule.RuleID rule = game.get_rule();
+
+        message += "Rule : " + rule.toString() + "\n";
 
         if (game.calc_mode()) {
-            message += String.format("white dead : %d, black dead : %d\n",
-                info.white_dead, info.black_dead);
-            message += String.format("white house : %d, black house : %d\n",
+            message += String.format("Black dead  : %d, White dead  : %d\n",
+                info.black_dead, info.white_dead);
+            message += String.format("White house : %d, Black house : %d\n",
                 info.white_score, info.black_score);
-            message += String.format("Live W on board : %d\n",
-                info.white_count);
-            message += String.format("Live B on board : %d\n",
-                info.black_count);
-            message += String.format("komi : %.1f\n", info.komi);
-            message += String.format("white total : %.1f\n", info.white_final);
-            message += String.format("black total : %.1f\n", info.black_final);
+            message += String.format("Live W      : %d, Live B      : %d\n",
+                info.white_count, info.black_count);
+            message += String.format("Komi : %.1f\n", info.komi);
+            message += String.format("White total : %.1f\n", info.white_final);
+            message += String.format("Black total : %.1f\n", info.black_final);
             message += "Result : ";
 
             if (info.score_diff == 0)
