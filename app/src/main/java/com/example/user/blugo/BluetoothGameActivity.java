@@ -149,6 +149,19 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
 
         /* Set volume control to music */
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+        String start_message = null;
+
+        if (game.isMyTurn()) {
+            if (game.get_my_color() == GoControl.Player.BLACK) {
+                start_message = "Your turn(black)";
+            } else {
+                start_message = "Your turn(white)";
+            }
+        }
+
+        if (start_message != null)
+            Toast.makeText(this, start_message, Toast.LENGTH_SHORT).show();
     }
 
     private void stop_server_client()
@@ -189,6 +202,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
     protected void onDestroy() {
         super.onDestroy();
         stop_server_client();
+        gv.release_memory();
     }
 
     @Override
@@ -203,6 +217,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
                     btn_pass.setEnabled(true);
                 }
                 txt_info.setText(get_info_text());
+
                 return true;
 
             case GoMessageListener.BLUTOOTH_COMM_ERROR:

@@ -64,6 +64,12 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         btn_detail = (Button) findViewById(R.id.btn_detail);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        gv.release_memory();
+    }
+
     private void load_sgf()
     {
         load_progress = new ProgressDialog(this);

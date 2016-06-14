@@ -96,7 +96,6 @@ public class BlutoothCommThread extends Thread {
                      h.sendMessage(msg);
                 }
                 mutex.release();
-                // Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
 
             } catch(IOException e) {
                 Log.d("MYTAG", e.toString());

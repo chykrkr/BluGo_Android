@@ -35,7 +35,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/go_board_view"
         app:exampleDrawable="@drawable/board"
-        app:exampleString="Hello, GoBoardView"
         android:layout_weight="1.12"/>
 
     <RelativeLayout
