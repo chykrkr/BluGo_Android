@@ -45,6 +45,7 @@ public class GoBoardView extends View implements GoControl.Callback {
     private final static int OPAQUE_ALPHA = 255;
     private final static int GHOST_ALPHA = 150;
 
+    private MediaPlayer mplayer;
 
     private Point ghost_pos = new Point(-1, -1);
 
@@ -82,16 +83,19 @@ public class GoBoardView extends View implements GoControl.Callback {
     public GoBoardView(Context context) {
         super(context);
         init(null, 0);
+        mplayer = MediaPlayer.create(this.getContext(), R.raw.tick);
     }
 
     public GoBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs, 0);
+        mplayer = MediaPlayer.create(this.getContext(), R.raw.tick);
     }
 
     public GoBoardView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(attrs, defStyle);
+        mplayer = MediaPlayer.create(this.getContext(), R.raw.tick);
     }
 
     private Point getGhost_pos(float x, float y)
@@ -182,9 +186,7 @@ public class GoBoardView extends View implements GoControl.Callback {
                     this.invalidate();
                 } else {
                     /* If putStoneAt is successful then this view is updated automatically */
-                    if (go_control.putStoneAt(p.x, p.y, false) == true) {
-                        this.playSoundEffect(SoundEffectConstants.CLICK);
-                    }
+                    go_control.putStoneAt(p.x, p.y, false);
                 }
                 break;
 
@@ -642,5 +644,11 @@ public class GoBoardView extends View implements GoControl.Callback {
     @Override
     public void callback_board_state_changed() {
         this.invalidate();
+    }
+
+    @Override
+    public void put_stone_success() {
+        /* play sound for putting stone */
+        mplayer.start();
     }
 }

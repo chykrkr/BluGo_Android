@@ -123,8 +123,10 @@ public class GoControlSingle extends GoControl {
 
 	current_turn = next_turn;
 
-        if (callback_receiver != null)
+        if (callback_receiver != null) {
+            callback_receiver.put_stone_success();
             callback_receiver.callback_board_state_changed();
+        }
 
         return true;
     }

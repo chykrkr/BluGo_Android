@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -138,6 +139,9 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
         txt_info = (TextView) findViewById(R.id.text_info);
         txt_info.setText(get_info_text());
+
+        /* Set volume control to music */
+        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     public void undo(View view)

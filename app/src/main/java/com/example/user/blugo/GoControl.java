@@ -120,6 +120,7 @@ public abstract class GoControl {
 
     public interface Callback {
         public void callback_board_state_changed();
+        public void put_stone_success();
     }
 
     public static class GoInfo

@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Point;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
@@ -145,6 +146,9 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         btn_undo = (Button) findViewById(R.id.btn_undo);
         btn_pass = (Button) findViewById(R.id.btn_pass);
         btn_resign = (Button) findViewById(R.id.btn_resign);
+
+        /* Set volume control to music */
+        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     private void stop_server_client()
