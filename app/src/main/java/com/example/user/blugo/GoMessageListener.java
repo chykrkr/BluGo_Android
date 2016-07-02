@@ -6,7 +6,6 @@ import android.os.Handler;
  * Created by user on 2016-06-08.
  */
 public interface GoMessageListener {
-    int MSG_VIEW_FULLY_DRAWN =  1;
     int BLUTOOTH_SERVER_SOCKET_ERROR = 2;
     int BLUTOOTH_CLIENT_SOCKET_ERROR = 3;
     int BLUTOOTH_CLIENT_CONNECT_SUCCESS = 4;
@@ -16,11 +15,11 @@ public interface GoMessageListener {
     int FRONTDOORACTIVITY_MSG_LOAD_END = 8;
     int SAVE_FILE_NAME_INPUT_FINISHED = 9;
     int SINGLE_GAME_SETTING_FINISHED = 10;
-    int MSG_MAX = SINGLE_GAME_SETTING_FINISHED;
-
+    int MSG_LOAD_END = 11;
+    int MSG_LOAD_FAIL = 12;
 
     public final static String GAME_SETTING_MESSAGE =
         "com.example.user.blugo.GoMessageListener.GAME_SETTING_MESSAGE";
 
-    Handler get_msg_handler();
+    Handler get_go_msg_handler();
 }

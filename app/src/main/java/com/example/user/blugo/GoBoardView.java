@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
@@ -16,18 +15,12 @@ import android.graphics.drawable.shapes.RectShape;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.ColorInt;
-import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SoundEffectConstants;
 import android.view.View;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import com.example.user.blugo.GoControl;
 
 /**
  * TODO: document your custom view class.
@@ -450,7 +443,7 @@ public class GoBoardView extends View implements GoControl.Callback {
         GoBoardViewListener parent = (GoBoardViewListener) this.getContext();
         Handler h;
 
-        h = parent.get_msg_handler();
+        h = parent.get_view_msg_handler();
         msg = Message.obtain(h, GoBoardViewListener.MSG_VIEW_FULLY_DRAWN, "msg");
         h.sendMessage(msg);
     }

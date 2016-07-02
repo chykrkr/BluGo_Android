@@ -89,7 +89,7 @@ public class BlutoothCommThread extends Thread {
                     mutex.acquire();
                 } catch (InterruptedException e) {}
                 if (listener != null) {
-                    h = listener.get_msg_handler();
+                    h = listener.get_go_msg_handler();
                     msg = Message.obtain();
                     msg.what = GoMessageListener.BLUTOOTH_COMM_MSG;
                     msg.obj = parser.parse(message);
@@ -106,7 +106,7 @@ public class BlutoothCommThread extends Thread {
                     mutex.acquire();
                 } catch (InterruptedException ie) {}
                 if (listener != null) {
-                    h = listener.get_msg_handler();
+                    h = listener.get_go_msg_handler();
                     msg = Message.obtain(h, GoMessageListener.BLUTOOTH_COMM_ERROR,
                         e.toString());
                     h.sendMessage(msg);

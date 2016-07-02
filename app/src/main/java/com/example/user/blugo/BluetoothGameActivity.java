@@ -15,8 +15,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BluetoothGameActivity extends AppCompatActivity implements Handler.Callback,
+public class BluetoothGameActivity extends AppCompatActivity implements
     GoBoardViewListener, GoMessageListener {
+    private Handler msg_handler = new Handler(new GoMsgHandler());
+    private Handler view_msg_handler = new Handler(new ViewMessageHandler());
+
     private GoBoardView gv;
     private TextView txt_info;
     private GoControlBluetooth game;
@@ -77,8 +80,6 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
 
         return str;
     }
-
-    private Handler msg_handler = new Handler(this);
 
     private BlutoothCommThread comm_thread = null;
 
@@ -205,33 +206,49 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
         gv.release_memory();
     }
 
-    @Override
-    public boolean handleMessage(Message msg) {
-        switch (msg.what) {
-            case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
-                if (game.calc_mode()) {
-                    btn_confirm.setEnabled(true);
-                    btn_pass.setEnabled(false);
-                } else {
-                    btn_confirm.setEnabled(false);
-                    btn_pass.setEnabled(true);
-                }
-                txt_info.setText(get_info_text());
+    private class GoMsgHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
+            switch (msg.what) {
+                case GoMessageListener.MSG_LOAD_END:
+                    return true;
 
-                return true;
+                case GoMessageListener.BLUTOOTH_COMM_ERROR:
+                    stop_server_client();
+                    Toast.makeText(BluetoothGameActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    return true;
 
-            case GoMessageListener.BLUTOOTH_COMM_ERROR:
-                stop_server_client();
-                Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
-                return true;
-
-            case GoMessageListener.BLUTOOTH_COMM_MSG:
-                BlutoothMsgParser.MsgParsed parsed = (BlutoothMsgParser.MsgParsed) msg.obj;
-                handle_comm_message(parsed);
-                return true;
+                case GoMessageListener.BLUTOOTH_COMM_MSG:
+                    BlutoothMsgParser.MsgParsed parsed = (BlutoothMsgParser.MsgParsed) msg.obj;
+                    handle_comm_message(parsed);
+                    return true;
+            }
+            return false;
         }
+    }
 
-        return false;
+    private class ViewMessageHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
+            switch (msg.what) {
+                case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
+                    if (game.calc_mode()) {
+                        btn_confirm.setEnabled(true);
+                        btn_pass.setEnabled(false);
+                    } else {
+                        btn_confirm.setEnabled(false);
+                        btn_pass.setEnabled(true);
+                    }
+                    txt_info.setText(get_info_text());
+
+                    return true;
+            }
+            return false;
+        }
     }
 
     public void pass(View view)
@@ -374,8 +391,14 @@ public class BluetoothGameActivity extends AppCompatActivity implements Handler.
     }
 
     @Override
-    public Handler get_msg_handler() {
-        return msg_handler;
+    public Handler get_view_msg_handler() {
+        return this.view_msg_handler;
+    }
+
+    @Override
+    public Handler get_go_msg_handler()
+    {
+        return this.msg_handler;
     }
 
     public void resign(View view)

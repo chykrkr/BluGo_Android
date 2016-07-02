@@ -288,7 +288,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         NewBoardState state;
 
         switch (msg.what) {
-            case FRONTDOORACTIVITY_MSG_LOAD_END:
+            case GoMessageListener.FRONTDOORACTIVITY_MSG_LOAD_END:
                 intent = new Intent(this, ReviewGameActivity.class);
                 intent.putExtra(EXTRA_MESSAGE, (String) msg.obj);
                 startActivity(intent);
@@ -486,7 +486,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
     }
 
     @Override
-    public Handler get_msg_handler() {
+    public Handler get_go_msg_handler() {
         return this.msg_handler;
     }
 

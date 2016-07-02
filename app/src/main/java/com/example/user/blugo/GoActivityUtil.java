@@ -1,6 +1,7 @@
 package com.example.user.blugo;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Environment;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.widget.EditText;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Calendar;
 
@@ -18,6 +20,7 @@ import java.util.Calendar;
  */
 public class GoActivityUtil implements Handler.Callback, GoMessageListener {
     private static GoActivityUtil instance = null;
+    private ProgressDialog load_progress = null;
 
     private Handler msg_handler = new Handler(this);
 
@@ -37,7 +40,7 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
         return instance;
     }
 
-    public Handler get_msg_handler()
+    public Handler get_go_msg_handler()
     {
         return msg_handler;
     }
@@ -77,11 +80,11 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
                     save_sgf_msg.go_control = control;
                     save_sgf_msg.context = context;
 
-                    msg = Message.obtain(GoActivityUtil.getInstance().get_msg_handler(),
+                    msg = Message.obtain(GoActivityUtil.getInstance().get_go_msg_handler(),
                         GoMessageListener.SAVE_FILE_NAME_INPUT_FINISHED,
                         save_sgf_msg);
 
-                    GoActivityUtil.getInstance().get_msg_handler().sendMessage(msg);
+                    GoActivityUtil.getInstance().get_go_msg_handler().sendMessage(msg);
                 }
             })
             .setNegativeButton("CANCEL", null);
@@ -130,5 +133,53 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /* SGF Loading process */
+    public void load_sgf(Context ctx, final String sgf_path, final GoControl game, final Handler msg_handler)
+    {
+        load_progress = new ProgressDialog(ctx);
+        load_progress.setCancelable(true);
+        load_progress.setMessage("Loading SGF ...");
+        load_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        load_progress.setProgress(0);
+        load_progress.setMax(100);
+        load_progress.show();
+
+        new Thread(new Runnable() {
+            public void run() {
+                Message msg;
+                FileInputStream is;
+                byte [] buffer = new byte[512];
+                int read;
+                String tmp;
+
+                String sgf_string = new String();
+
+                try {
+                    is = new FileInputStream(sgf_path);
+
+                    while (true) {
+                        read = is.read(buffer, 0, buffer.length);
+
+                        if (read > 0) {
+                            tmp = new String(buffer, 0, read, "UTF-8");
+                            sgf_string += tmp;
+                        } else
+                            break;
+                    }
+                    is.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    msg = Message.obtain(msg_handler, MSG_LOAD_FAIL, "msg");
+                    msg_handler.sendMessage(msg);
+                    return;
+                }
+
+                game.load_sgf(sgf_string);
+                msg = Message.obtain(msg_handler, MSG_LOAD_END, load_progress);
+                msg_handler.sendMessage(msg);
+            }
+        }).start();
     }
 }

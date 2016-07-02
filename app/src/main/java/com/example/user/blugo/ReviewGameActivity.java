@@ -2,7 +2,6 @@ package com.example.user.blugo;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
@@ -13,30 +12,30 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.FileInputStream;
+public class ReviewGameActivity extends AppCompatActivity implements  GoBoardViewListener, SeekBar.OnSeekBarChangeListener{
+    public Handler msg_handler = new Handler(new GoMsgHandler());
+    public Handler view_msg_handler = new Handler(new ViewMessageHandler());
 
-public class ReviewGameActivity extends AppCompatActivity implements Handler.Callback, GoBoardViewListener, SeekBar.OnSeekBarChangeListener{
-    public Handler msg_handler = new Handler(this);
-    public final static int MSG_LOAD_END = GoBoardViewListener.MSG_MAX + 1;
-    public final static int MSG_LOAD_FAIL = MSG_LOAD_END + 1;
-    public final static String MSG_BOARD_STATE = "com.example.user.blugo.ReviewGameActivity.MSG_BOARD_STATE";
-    public final static String MSG_CURRENT_TURN = "com.example.user.blugo.ReviewGameActivity.MSG_CURRENT_TURN";
-    public final static String MSG_START_TURNNO = "com.example.user.blugo.ReviewGameActivity.MSG_START_TURNNO";
-    public final static String MSG_SETTING = "com.example.user.blugo.ReviewGameActivity.MSG_SETTING";
-    public final static String MSG_ENABLE_SAVE = "com.example.user.blugo.ReviewGameActivity.MSG_ENABLE_SAVE";
+    private final static String PREFIX = "com.example.user.blugo.ReviewGameActivity";
+    public final static String MSG_BOARD_STATE = PREFIX + ".MSG_BOARD_STATE";
+    public final static String MSG_CURRENT_TURN = PREFIX + ".MSG_CURRENT_TURN";
+    public final static String MSG_START_TURNNO = PREFIX + ".MSG_START_TURNNO";
+    public final static String MSG_SETTING = PREFIX + ".MSG_SETTING";
+    public final static String MSG_ENABLE_SAVE = PREFIX + ".MSG_ENABLE_SAVE";
 
     private GoBoardView gv;
     private SeekBar sbar;
     private TextView text_pos, text_result;
     private GoControlReview game = new GoControlReview();
-    private ProgressDialog load_progress;
+
     private String sgf_path;
     private boolean need_to_load = false;
     private boolean loading_finished = false;
 
     private Button button, btn_detail;
+
+    private ProgressDialog load_progress = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,49 +71,7 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
 
     private void load_sgf()
     {
-        load_progress = new ProgressDialog(this);
-        load_progress.setCancelable(true);
-        load_progress.setMessage("Loading SGF ...");
-        load_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        load_progress.setProgress(0);
-        load_progress.setMax(100);
-        load_progress.show();
-
-        new Thread(new Runnable() {
-            public void run() {
-                Message msg;
-                FileInputStream is;
-                byte [] buffer = new byte[512];
-                int read;
-                String tmp;
-
-                String sgf_string = new String();
-
-                try {
-                    is = new FileInputStream(sgf_path);
-
-                    while (true) {
-                        read = is.read(buffer, 0, buffer.length);
-
-                        if (read > 0) {
-                            tmp = new String(buffer, 0, read, "UTF-8");
-                            sgf_string += tmp;
-                        } else
-                            break;
-                    }
-                    is.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    msg = Message.obtain(ReviewGameActivity.this.msg_handler, MSG_LOAD_FAIL, "msg");
-                    ReviewGameActivity.this.msg_handler.sendMessage(msg);
-                    return;
-                }
-
-                game.load_sgf(sgf_string);
-                msg = Message.obtain(ReviewGameActivity.this.msg_handler, MSG_LOAD_END, "msg");
-                ReviewGameActivity.this.msg_handler.sendMessage(msg);
-            }
-        }).start();
+        GoActivityUtil.getInstance().load_sgf(this, sgf_path, game, msg_handler);
     }
 
     private void set_button_enables()
@@ -126,40 +83,59 @@ public class ReviewGameActivity extends AppCompatActivity implements Handler.Cal
         }
     }
 
-    @Override
-    public boolean handleMessage(Message msg) {
-        String tmp;
-        switch (msg.what) {
-            case MSG_LOAD_END:
-		gv.invalidate();
-                sbar.setMax(game.get_last_pos());
-                sbar.setProgress(game.getCur_pos());
-                tmp = String.format("%d/%d", game.getCur_pos(), this.sbar.getMax());
-                text_pos.setText(tmp);
-                loading_finished = true;
+    private class GoMsgHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
 
-                set_button_enables();
 
-                text_result.setText(game.get_determined_result_string());
+            switch (msg.what) {
+                case GoMessageListener.MSG_LOAD_END:
+                    load_progress = (ProgressDialog) msg.obj;
 
-                load_progress.dismiss();
+                    sbar.setMax(game.get_last_pos());
+                    sbar.setProgress(game.getCur_pos());
+                    tmp = String.format("%d/%d", game.getCur_pos(), sbar.getMax());
+                    text_pos.setText(tmp);
+                    loading_finished = true;
 
-                return true;
+                    set_button_enables();
 
-            case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
-                if (need_to_load) {
-                    Log.d("DEBUG", "TEST");
-                    load_sgf();
-                    need_to_load = !need_to_load;
-                }
-                return true;
+                    text_result.setText(game.get_determined_result_string());
+
+                    /* Must be after statement load_progress = ... */
+                    gv.invalidate();
+                    return true;
+            }
+            return false;
         }
-        return false;
+    }
+
+    private class ViewMessageHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
+            switch (msg.what) {
+                case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
+                    if (need_to_load) {
+                        Log.d("DEBUG", "TEST");
+                        load_sgf();
+                        need_to_load = !need_to_load;
+                    } else if (load_progress != null) {
+                        load_progress.dismiss();
+                        load_progress = null;
+                    }
+                    return true;
+            }
+            return false;
+        }
     }
 
     @Override
-    public Handler get_msg_handler() {
-        return msg_handler;
+    public Handler get_view_msg_handler() {
+        return view_msg_handler;
     }
 
     @Override

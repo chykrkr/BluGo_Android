@@ -73,7 +73,7 @@ public class BlutoothMsgParser {
     private final Pattern gsetting =
         Pattern.compile("(?m)r=([jc]),komi=([0-9.]+),size=(\\d+),wb=(\\d+),handicap=(\\d+)");
 
-    public static String make_request_play_message(Object opt)
+    private static String make_request_play_message(Object opt)
     {
         /*
         Example message.

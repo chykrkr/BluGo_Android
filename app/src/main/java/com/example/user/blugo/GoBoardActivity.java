@@ -31,16 +31,16 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, Handler.Callback, GoBoardViewListener {
+public class GoBoardActivity extends AppCompatActivity implements FileChooser.FileSelectedListener, GoBoardViewListener {
     private GoBoardView gv;
     private TextView txt_info;
     private GoControl single_game;
     private ProgressDialog progressBar;
     private String sgf_string = null;
     private File file;
-    public static final int MSG_LOAD_END = GoBoardViewListener.MSG_MAX + 1;
 
-    public Handler msg_handler = new Handler(this);
+    public Handler msg_handler = new Handler(new GoMsgHandler());
+    public Handler view_msg_handler = new Handler(new ViewMessageHandler());
 
     private String get_info_text() {
         String str, result;
@@ -233,7 +233,7 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
             public void run() {
                 single_game.load_sgf(sgf_string);
                 Message msg;
-                msg = Message.obtain(GoBoardActivity.this.msg_handler, MSG_LOAD_END, "msg");
+                msg = Message.obtain(GoBoardActivity.this.msg_handler, GoMessageListener.MSG_LOAD_END, "msg");
                 GoBoardActivity.this.msg_handler.sendMessage(msg);
             }
         }).start();
@@ -241,26 +241,39 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
     }
 
-    @Override
-    public boolean handleMessage(Message msg) {
-        switch (msg.what) {
-            case MSG_LOAD_END:
-                gv.invalidate();
-                txt_info.setText(get_info_text());
-                progressBar.dismiss();
-                return true;
-
-            case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
-                txt_info.setText(get_info_text());
-                return true;
+    private class GoMsgHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
+            switch (msg.what) {
+                case GoMessageListener.MSG_LOAD_END:
+                    gv.invalidate();
+                    txt_info.setText(get_info_text());
+                    progressBar.dismiss();
+                    return true;
+            }
+            return false;
         }
+    }
 
-        return false;
+    private class ViewMessageHandler implements Handler.Callback
+    {
+        @Override
+        public boolean handleMessage(Message msg) {
+            String tmp;
+            switch (msg.what) {
+                case GoBoardViewListener.MSG_VIEW_FULLY_DRAWN:
+                    txt_info.setText(get_info_text());
+                    return true;
+            }
+            return false;
+        }
     }
 
     @Override
-    public Handler get_msg_handler() {
-        return msg_handler;
+    public Handler get_view_msg_handler() {
+        return this.view_msg_handler;
     }
 
     public void resign(View view)

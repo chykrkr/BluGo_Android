@@ -61,7 +61,7 @@ public class BlutoothClientThread extends Thread {
         Message msg;
 
         mBluetoothAdapter.cancelDiscovery();
-        h = listener.get_msg_handler();
+        h = listener.get_go_msg_handler();
 
         try {
             mmSocket.connect();

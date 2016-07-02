@@ -66,7 +66,7 @@ public class BlutoothServerThread extends Thread {
 
             instance = null;
 
-	    Handler h = listener.get_msg_handler();
+	    Handler h = listener.get_go_msg_handler();
 	    msg = Message.obtain(h, GoMessageListener.BLUTOOTH_SERVER_SOCKET_ERROR,
 				 e.toString());
             h.sendMessage(msg);

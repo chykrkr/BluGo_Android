@@ -276,7 +276,7 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     }
 
     @Override
-    public Handler get_msg_handler() {
+    public Handler get_go_msg_handler() {
         return msg_handler;
     }
 
