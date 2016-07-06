@@ -52,28 +52,37 @@ public class GoBoardActivity extends AppCompatActivity implements FileChooser.Fi
 
         if (resigned != null) {
             if (resigned == GoControl.Player.BLACK) {
-                return "W+R";
+                return getString(R.string.white_won_by_resign_short);
             } else {
-                return "B+R";
+                return getString(R.string.black_won_by_resign_short);
             }
         }
 
         if (single_game.calc_mode()) {
             if (info.score_diff == 0) {
-                result = "DRAW";
+                result = getString(R.string.draw);
             } else if (info.score_diff > 0) {
-                result = String.format("W+%.1f", info.score_diff);
+                result = String.format(getString(R.string.white_short) + "+%.1f",
+				       info.score_diff);
             } else {
-                result = String.format("B+%.1f", Math.abs(info.score_diff));
+                result = String.format(getString(R.string.black_short) + "+%.1f",
+				       Math.abs(info.score_diff));
             }
 
-            str = String.format("ws: %.1f, bs: %d, %s",
-                info.white_final, (int) info.black_final, result);
+            str = String.format(getString(R.string.white_tr_short) +
+				": %.1f, " +
+				getString(R.string.black_tr_short) +
+				": %.1f, %s",
+				info.white_final, info.black_final, result);
         } else {
-            str = String.format("%s(%d), wd: %d, bd: %d",
-                info.turn == GoControl.Player.WHITE? "W" : "B",
-                info.turn_num,
-                info.white_dead, info.black_dead);
+            str = String.format("%s(%d), %s: %d, %s: %d",
+                info.turn == GoControl.Player.WHITE?
+				getString(R.string.white_short) : getString(R.string.black_short),
+				info.turn_num,
+				getString(R.string.dead_white_short),
+				info.white_dead,
+				getString(R.string.dead_black_short),
+				info.black_dead);
         }
 
         return str;

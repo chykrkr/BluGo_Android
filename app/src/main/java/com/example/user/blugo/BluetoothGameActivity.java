@@ -51,30 +51,37 @@ public class BluetoothGameActivity extends AppCompatActivity implements
         if (game.calc_mode()) {
             if (info.resigned == GoControl.Player.WHITE) {
                 /* white resigned */
-                result = "B+R";
+                result = getString(R.string.black_won_by_resign_short);
             } else if (info.resigned == GoControl.Player.BLACK) {
                 /* black resigned */
-                result = "W+R";
+                result = getString(R.string.white_won_by_resign_short);
             } else if (info.score_diff == 0) {
-                result = "DRAW";
+                result = getString(R.string.draw).toUpperCase();
             } else if (info.score_diff > 0) {
-                result = String.format("W+%.1f", info.score_diff);
+                result = String.format(getString(R.string.white_short) + "+%.1f", info.score_diff);
             } else {
-                result = String.format("B+%.1f", Math.abs(info.score_diff));
+                result = String.format(getString(R.string.black_short) + "+%.1f", Math.abs(info.score_diff));
             }
 
-            str = String.format("ws: %.1f, bs: %d, %s", info.white_final,
-                (int) info.black_final, result);
+            str = String.format(getString(R.string.white_tr_short) + ": %.1f, " +
+				getString(R.string.black_tr_short) + ": %.1f, %s",
+				info.white_final,
+				info.black_final,
+				result);
         } else {
-            str = String.format("%s(%d), wd: %d, bd: %d",
-                info.turn == GoControl.Player.WHITE? "W" : "B",
-                info.turn_num,
-                info.white_dead, info.black_dead);
+            str = String.format("%s(%d), %s: %d, %s: %d",
+				info.turn == GoControl.Player.WHITE?
+				getString(R.string.white_short) : getString(R.string.black_short),
+				info.turn_num,
+				getString(R.string.dead_white_short),
+				info.white_dead,
+				getString(R.string.dead_black_short),
+				info.black_dead);
 
             if (info.resigned == GoControl.Player.WHITE) {
-                str += ", B+R";
+                str += ", " + getString(R.string.black_won_by_resign_short);
             } else if (info.resigned == GoControl.Player.BLACK) {
-                str += ", W+R";
+                str += ", " + getString(R.string.white_won_by_resign_short);
             }
         }
 
@@ -112,7 +119,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
             case CHINESE:
                 if (handicapped != null)
-                    rule = new GoRuleJapan(handicapped);
+                    rule = new GoRuleChinese(handicapped);
                 else
                     rule = new GoRuleChinese(setting.size);
                 break;
@@ -155,9 +162,9 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
         if (game.isMyTurn()) {
             if (game.get_my_color() == GoControl.Player.BLACK) {
-                start_message = "Your turn(black)";
+                start_message = getString(R.string.your_turn_black);
             } else {
-                start_message = "Your turn(white)";
+                start_message = getString(R.string.your_turn_white);
             }
         }
 
@@ -271,17 +278,18 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
             case PASS:
                 game.op_pass();
-                Toast.makeText(this, (String) "Opponent passed",
+                Toast.makeText(this, (String) getString(R.string.opponent_passed),
                     Toast.LENGTH_SHORT).show();
                 break;
 
             case RESIGN:
                 //game.finish();
                 builder = new AlertDialog.Builder(this);
-                builder.setMessage(String.format("You(%s) won by resign",
-                    game.get_my_color() == GoControl.Player.BLACK? "black" : "white"))
+                builder.setMessage(String.format(getString(R.string.fmt_you_won_by),
+						 game.get_my_color() == GoControl.Player.BLACK?
+						 getString(R.string.black) : getString(R.string.white)))
                     .setCancelable(false)
-                    .setPositiveButton("OK", null);
+                    .setPositiveButton(android.R.string.ok, null);
                 alert = builder.create();
                 alert.show();
                 game.opponent_resigned();
@@ -290,14 +298,14 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
             case RESULT_CONFIRM:
                 calc_result_confirm |= OPPONENT_CONFIRMED;
-                Toast.makeText(this, (String) "Opponent confirmed result",
+                Toast.makeText(this, (String) getString(R.string.opponent_confirmed_result),
                     Toast.LENGTH_SHORT).show();
                 check_result();
                 break;
 
             case DECLINE_RESULT:
                 calc_result_confirm = 0x00; /* From the beginning */
-                Toast.makeText(this, (String) "Opponent declined result",
+                Toast.makeText(this, (String) getString(R.string.opponent_declined_result),
                     Toast.LENGTH_SHORT).show();
 
                 game.setConfirm_check(false);
@@ -306,12 +314,12 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
             case ACCEPT_RESULT:
                 calc_result_confirm |= OPPONENT_ACCEPTED;
-                Toast.makeText(this, (String) "Opponent accepted result",
+                Toast.makeText(this, (String) getString(R.string.opponent_accepted_result),
                     Toast.LENGTH_SHORT).show();
 
                 /*try finish game*/
                 if ((calc_result_confirm & BOTH_ACCEPTED) == BOTH_ACCEPTED) {
-                    Toast.makeText(this, (String) "Game finished",
+                    Toast.makeText(this, (String) getString(R.string.game_finished),
                         Toast.LENGTH_SHORT).show();
                     finish_game();
                 }
@@ -331,10 +339,10 @@ public class BluetoothGameActivity extends AppCompatActivity implements
                     break;
                 }
                 builder = new AlertDialog.Builder(this);
-                builder.setTitle("Undo request, accept it?")
+                builder.setTitle(getString(R.string.question_undo_request_accept_it))
                     /*.setMessage("Opponent requested undo. Would you accept request?")*/
                     .setCancelable(false)
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             BlutoothCommThread comm;
@@ -349,7 +357,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements
                                 BlutoothMsgParser.MsgType.ACCEPT_UNDO, null));
                         }
                     })
-                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             BlutoothCommThread comm;
@@ -362,7 +370,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements
                                 BlutoothMsgParser.MsgType.DECLINE_UNDO, null));
                         }
                     })
-                    .setMultiChoiceItems(new String[]{"Refuse undo request permanently"},
+                    .setMultiChoiceItems(new String[]{getString(R.string.refuse_undo_request_permanently)},
                         null, new DialogInterface.OnMultiChoiceClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which,
@@ -380,7 +388,7 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
             case DECLINE_UNDO:
                 game.undo_apply(false, true);
-                Toast.makeText(this, (String) "Your undo request was rejected",
+                Toast.makeText(this, (String) getString(R.string.your_undo_request_was_rejected),
                     Toast.LENGTH_SHORT).show();
                 break;
 
@@ -452,32 +460,37 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
         String message = "";
         GoControl.GoInfo info =  game.get_info();
+        GoRule.RuleID rule = game.get_rule();
 
-        message += String.format("white dead : %d, black dead : %d\n",
-            info.white_dead, info.black_dead);
-        message += String.format("white house : %d, black house : %d\n",
-            info.white_score, info.black_score);
-        message += String.format("Live W on board : %d\n",
-            info.white_count);
-        message += String.format("Live B on board : %d\n",
-            info.black_count);
-        message += String.format("komi : %.1f\n", info.komi);
-        message += String.format("white total : %.1f\n", info.white_final);
-        message += String.format("black total : %.1f\n", info.black_final);
-        message += "Result : ";
+        message += getString(R.string.rule) + " : " + rule.toString() + "\n";
+
+        message += String.format(getString(R.string.dead_white) + " : %d, " +
+				 getString(R.string.dead_black) + " : %d\n",
+				 info.white_dead, info.black_dead);
+        message += String.format(getString(R.string.white_tr) + " : %d, " +
+				 getString(R.string.black_tr) + " : %d\n",
+				 info.white_score, info.black_score);
+        message += String.format(getString(R.string.live_white) + " : %d\n",
+				 info.white_count);
+        message += String.format(getString(R.string.live_black) + " : %d\n",
+				 info.black_count);
+        message += String.format(getString(R.string.komi) + " : %.1f\n", info.komi);
+        message += String.format(getString(R.string.white_total) + " : %.1f\n", info.white_final);
+        message += String.format(getString(R.string.black_total) + " : %.1f\n", info.black_final);
+        message += getString(R.string.result) + " : ";
 
         if (info.score_diff == 0)
-            message += "DRAW";
+            message += getString(R.string.draw);
         else if (info.score_diff > 0)
-            message += String.format("White won by %.1f", info.score_diff);
+            message += String.format(getString(R.string.fmt_white_won_by), info.score_diff);
         else
-            message += String.format("Black won by %.1f", Math.abs(info.score_diff));
+            message += String.format(getString(R.string.fmt_black_won_by), Math.abs(info.score_diff));
 
         builder = new AlertDialog.Builder(this);
         builder.setMessage(message)
-            .setTitle("Accept result?")
+            .setTitle(getString(R.string.question_accept_result))
             .setCancelable(false)
-            .setPositiveButton("ACCEPT", new DialogInterface.OnClickListener() {
+            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     calc_result_confirm |= YOU_ACCEPTED;
@@ -491,13 +504,13 @@ public class BluetoothGameActivity extends AppCompatActivity implements
 
                     /*try finish game*/
                     if ((calc_result_confirm & BOTH_ACCEPTED) == BOTH_ACCEPTED) {
-                        Toast.makeText(BluetoothGameActivity.this, (String) "Game finished",
+                        Toast.makeText(BluetoothGameActivity.this, (String) getString(R.string.game_finished),
                             Toast.LENGTH_SHORT).show();
                         finish_game();
                     }
                 }
             })
-            .setNegativeButton("DECLINE", new DialogInterface.OnClickListener() {
+            .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     calc_result_confirm = 0x00;

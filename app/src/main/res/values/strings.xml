@@ -1,4 +1,94 @@
 <resources>
     <string name="app_name">BluGo</string>
+    <string name="about">About</string>
     <string name="title_activity_review_game">ReviewGameActivity</string>
+    <string name="review_game">Review game</string>
+    <string name="single_game">Single game</string>
+    <string name="enable_discover">Enable discover</string>
+    <string name="wait_game_request">Wait game request</string>
+    <string name="request_game">Request game</string>
+    <string name="variation">Variation</string>
+    <string name="info">info</string>
+    <string name="information">Information</string>
+    <string name="rule">Rule</string>
+    <string name="rule_japanese">Japanese</string>
+    <string name="rule_chinese">Chinese</string>
+    <string name="draw">Draw</string>
+    <string name="resign">Resign</string>
+    <string name="undo">Undo</string>
+    <string name="pass">Pass</string>
+    <string name="save">Save</string>
+    <string name="confirm">Confirm</string>
+    <string name="white_won_by">White won by</string>
+    <string name="fmt_white_won_by">White won by %.1f</string>
+    <string name="fmt_black_won_by">Black won by %.1f</string>
+    <string name="fmt_white_won_by_short">W+%.1f</string>
+    <string name="fmt_black_won_by_short">B+%.1f</string>
+    <string name="fmt_white_won_by_2">White won by %s</string>
+    <string name="fmt_black_won_by_2">Black won by %s</string>
+    <string name="dead_black">Dead black</string>
+    <string name="dead_white">Dead white</string>
+    <string name="dead_black_short">bd</string>
+    <string name="dead_white_short">wd</string>
+    <string name="white_tr">White territory</string>
+    <string name="black_tr">Black territory</string>
+    <string name="white_tr_short">ws</string>
+    <string name="black_tr_short">bs</string>
+    <string name="live_white">Live W</string>
+    <string name="live_black">Live B</string>
+    <string name="komi">Komi</string>
+    <string name="size">Size</string>
+    <string name="handicap">Handicap</string>
+    <string name="white_total">White total</string>
+    <string name="black_total">Black total</string>
+    <string name="result">Result</string>
+
+    <string name="white_won_by_resign_short">W+R</string>
+    <string name="black_won_by_resign_short">B+R</string>
+
+    <string name="white_short">W</string>
+    <string name="black_short">B</string>
+
+    <string name="white">White</string>
+    <string name="black">Black</string>
+    <string name="random">Random</string>
+
+    <string name="game_setting">Game setting</string>
+
+    <string name="waiting_request">Waiting request</string>
+    <string name="W_B_SHORT">W/B</string>
+
+    <string name="discover_device">Discover device</string>
+
+    <string name="game_request_arrived">Game request arrived</string>
+
+    <string name="your_color">Your color</string>
+
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+
+    <string name="question_accept_result">Accept result?</string>
+
+    <string name="your_turn_black">Your turn(black)</string>
+    <string name="your_turn_white">Your turn(white)</string>
+
+    <string name="fmt_you_won_by">You(%s) won by resign</string>
+
+    <string name="opponent_passed">Opponent passed</string>
+
+    <string name="opponent_confirmed_result">Opponent confirmed result</string>
+    <string name="opponent_declined_result">Opponent declined result</string>
+    <string name="opponent_accepted_result">Opponent accepted result</string>
+    <string name="game_finished">Game finished</string>
+    <string name="refuse_undo_request_permanently">Refuse undo request permanently</string>
+    <string name="your_undo_request_was_rejected">Your undo request was rejected</string>
+    <string name="question_undo_request_accept_it">Undo request, accept it?</string>
+
+    <string name="input_save_file_name">Input save file name</string>
+
+    <string name="reset">reset</string>
+
+    <string name="loading_sgf">Loading SGF</string>
+    <string name="waiting_response">Waiting response</string>
+
 </resources>

@@ -1,5 +1,6 @@
 package com.example.user.blugo;
 
+import android.content.Context;
 import android.graphics.Point;
 import android.util.Log;
 
@@ -608,11 +609,11 @@ public class GoControlSingle extends GoControl {
 
         switch ((Player) determined_result[0]) {
             case BLACK:
-                result = "Black won by ";
+                result = ResStrGenerator.getInstance().get_res_string(R.string.fmt_black_won_by_2);
                 break;
 
             case WHITE:
-                result = "White won by ";
+                result = ResStrGenerator.getInstance().get_res_string(R.string.fmt_white_won_by_2);
                 break;
         }
 
@@ -622,7 +623,7 @@ public class GoControlSingle extends GoControl {
             result_convert = "resign";
         }
 
-        result += result_convert;
+	result = String.format(result, result_convert);
 
         return result;
     }

@@ -94,6 +94,28 @@ public abstract class GoRule {
 
             return sgf;
         }
+
+        @Override
+        public String toString()
+        {
+            String result;
+
+            switch (valueOf(value)) {
+                case JAPANESE:
+                    result = ResStrGenerator.getInstance().get_res_string(R.string.rule_japanese);
+                    break;
+
+                case CHINESE:
+                    result = ResStrGenerator.getInstance().get_res_string(R.string.rule_chinese);
+                    break;
+
+                default:
+                    result = ResStrGenerator.getInstance().get_res_string(R.string.rule_japanese);
+                    break;
+            }
+
+            return result;
+        }
     }
 
     public static class BoardPos {

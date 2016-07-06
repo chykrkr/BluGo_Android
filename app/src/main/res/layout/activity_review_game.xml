@@ -23,14 +23,14 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Variation"
+            android:text="@string/variation"
             android:id="@+id/btn_variation"
             android:onClick="try_varation"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Info"
+            android:text="@string/info"
             android:id="@+id/btn_detail"
             android:onClick="check_detail"/>
 

@@ -51,28 +51,28 @@
             <Button
                 android:layout_width="70dp"
                 android:layout_height="wrap_content"
-                android:text="Undo"
+                android:text="@string/undo"
                 android:id="@+id/button3"
                 android:onClick="undo"/>
 
             <Button
                 android:layout_width="70dp"
                 android:layout_height="wrap_content"
-                android:text="Pass"
+                android:text="@string/pass"
                 android:id="@+id/button6"
                 android:onClick="pass"/>
 
             <Button
                 android:layout_width="70dp"
                 android:layout_height="wrap_content"
-                android:text="Save"
+                android:text="@string/save"
                 android:id="@+id/btn_save"
                 android:onClick="save_SGF"/>
 
             <Button
                 android:layout_width="75dp"
                 android:layout_height="wrap_content"
-                android:text="Resign"
+                android:text="@string/resign"
                 android:id="@+id/btn_resign"
                 android:onClick="resign"/>
 

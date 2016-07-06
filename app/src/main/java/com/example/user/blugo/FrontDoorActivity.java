@@ -134,8 +134,8 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         /* rule */
         sp_rule = (Spinner) layout.findViewById(R.id.sp_rule);
         List<String> rules = new ArrayList<String>();
-        rules.add("JAPANESE");
-        rules.add("CHINESE");
+        rules.add(getString(R.string.rule_japanese).toUpperCase());
+        rules.add(getString(R.string.rule_chinese).toUpperCase());
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, rules);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         sp_rule.setAdapter(adapter);
@@ -173,8 +173,8 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         builder = new AlertDialog.Builder(this);
         builder
             .setView(layout)
-            .setTitle("Game setting")
-            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            .setTitle(getString(R.string.game_setting))
+            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     Message msg;
@@ -200,7 +200,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                     FrontDoorActivity.this.msg_handler.sendMessage(msg);
                 }
             })
-            .setNegativeButton("CANCEL", null);
+            .setNegativeButton(android.R.string.cancel, null);
 
         alert = builder.create();
         alert.show();
@@ -255,7 +255,7 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
         server.start();
 
         dialog.setContentView(layout);
-        dialog.setTitle("Waiting request ...");
+        dialog.setTitle(getString(R.string.waiting_request) + "...");
         dialog.setOnDismissListener(this);
         dialog.show();
     }
@@ -382,14 +382,15 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                 dialog.dismiss();
 
                 dialog_rq_confirm.setContentView(R.layout.request_confirm);
-                dialog_rq_confirm.setTitle("Game request arrived");
+                dialog_rq_confirm.setTitle(getString(R.string.game_request_arrived));
                 dialog_rq_confirm.setCanceledOnTouchOutside(false);
 
                 Button accept_button = (Button) dialog_rq_confirm.findViewById(R.id.btn_accept);
                 Button reject_button = (Button) dialog_rq_confirm.findViewById(R.id.btn_reject);
 
                 TextView tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_rule);
-                tmp.setText(setting.rule == 0 ? "Japanese" : "Chinese");
+                tmp.setText(setting.rule == 0 ?
+			    getString(R.string.rule_japanese) : getString(R.string.rule_chinese));
 
                 tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_handicap);
                 tmp.setText(setting.handicap + "");
@@ -403,11 +404,11 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
                 tmp = (TextView) dialog_rq_confirm.findViewById(R.id.txt_your_color);
 
                 if (setting.wb == 0) {
-                    tmp.setText("Random");
+                    tmp.setText(getString(R.string.random));
                 } else if (setting.wb == 1) {
-                    tmp.setText("White");
+                    tmp.setText(getString(R.string.white));
                 } else if (setting.wb == 2) {
-                    tmp.setText("Black");
+                    tmp.setText(getString(R.string.black));
                 }
 
                 accept_button.setOnClickListener(new View.OnClickListener() {
@@ -493,7 +494,9 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         Integer value;
-        if (parent.equals(this.sp_rule)) {
+
+        /* Handicapped game normally has no komi */
+        if (parent.equals(this.sp_rule) && (Integer) this.sp_handicap.getSelectedItem() < 1) {
             if (position == 0) {
                 komi.setText("6.5");
             } else {

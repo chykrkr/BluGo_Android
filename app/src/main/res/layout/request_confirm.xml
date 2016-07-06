@@ -48,7 +48,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rule:"
+        android:text="@string/rule"
         android:id="@+id/textViewRule"
         android:layout_alignParentLeft="true"
         android:layout_marginLeft="20dp"/>
@@ -56,7 +56,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="KOMI:"
+        android:text="@string/komi"
         android:id="@+id/textViewKOMI"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -66,7 +66,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Board size:"
+        android:text="@string/size"
         android:id="@+id/textViewBoardSize"
         android:layout_below="@+id/textViewKOMI"
         android:layout_alignParentLeft="true"
@@ -76,7 +76,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Handicap:"
+        android:text="@string/handicap"
         android:id="@+id/textViewHandicap"
         android:layout_below="@+id/textViewBoardSize"
         android:layout_alignParentLeft="true"
@@ -86,7 +86,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Your color:"
+        android:text="@string/your_color"
         android:id="@+id/textViewYourColor"
         android:layout_below="@+id/textViewHandicap"
         android:layout_alignParentLeft="true"
@@ -96,7 +96,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Accept"
+        android:text="@string/accept"
         android:id="@+id/btn_accept"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/txt_your_color"
@@ -105,7 +105,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Reject"
+        android:text="@string/reject"
         android:id="@+id/btn_reject"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/txt_your_color"

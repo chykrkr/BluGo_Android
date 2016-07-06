@@ -208,37 +208,40 @@ public class ReviewGameActivity extends AppCompatActivity implements  GoBoardVie
         GoControl.GoInfo info =  game.get_info();
         GoRule.RuleID rule = game.get_rule();
 
-        message += "Rule : " + rule.toString() + "\n";
+        message += getString(R.string.rule) + " : " + rule.toString() + "\n";
 
         if (game.calc_mode()) {
-            message += String.format("Black dead  : %d, White dead  : %d\n",
-                info.black_dead, info.white_dead);
-            message += String.format("White house : %d, Black house : %d\n",
-                info.white_score, info.black_score);
-            message += String.format("Live W      : %d, Live B      : %d\n",
-                info.white_count, info.black_count);
-            message += String.format("Komi : %.1f\n", info.komi);
-            message += String.format("White total : %.1f\n", info.white_final);
-            message += String.format("Black total : %.1f\n", info.black_final);
-            message += "Result : ";
+            message += String.format(getString(R.string.dead_black) + "  : %d, " +
+				     getString(R.string.dead_white) + "  : %d\n",
+				     info.black_dead, info.white_dead);
+            message += String.format(getString(R.string.white_tr) + " : %d, " +
+				     getString(R.string.black_tr) + " : %d\n",
+				     info.white_score, info.black_score);
+            message += String.format(getString(R.string.live_white) + "      : %d, " +
+				     getString(R.string.live_black) + "      : %d\n",
+				     info.white_count, info.black_count);
+            message += String.format(getString(R.string.komi) + " : %.1f\n", info.komi);
+            message += String.format(getString(R.string.white_total) + ": %.1f\n", info.white_final);
+            message += String.format(getString(R.string.black_total) + ": %.1f\n", info.black_final);
+            message += getString(R.string.result);
 
             if (info.score_diff == 0)
-                message += "DRAW";
+                message += getString(R.string.draw).toUpperCase();
             else if (info.score_diff > 0)
-                message += String.format("White won by %.1f", info.score_diff);
+                message += String.format(getString(R.string.fmt_white_won_by), info.score_diff);
             else
-                message += String.format("Black won by %.1f", Math.abs(info.score_diff));
+                message += String.format(getString(R.string.fmt_black_won_by), Math.abs(info.score_diff));
         } else {
-            message += String.format("white dead : %d\n", info.white_dead);
-            message += String.format("black dead : %d\n", info.black_dead);
-            message += String.format("komi : %.1f\n", info.komi);
+            message += String.format(getString(R.string.dead_white) + " : %d\n", info.white_dead);
+            message += String.format(getString(R.string.dead_black) + ": %d\n", info.black_dead);
+            message += String.format(getString(R.string.komi) + " : %.1f\n", info.komi);
         }
 
         builder = new AlertDialog.Builder(this);
         builder.setMessage(message)
-            .setTitle("Information")
+            .setTitle(getString(R.string.information))
             .setCancelable(false)
-            .setPositiveButton("OK", null);
+            .setPositiveButton(android.R.string.ok, null);
 
         AlertDialog alert = builder.create();
         alert.show();

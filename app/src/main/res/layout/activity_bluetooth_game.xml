@@ -59,7 +59,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Undo"
+                android:text="@string/undo"
                 android:id="@+id/btn_undo"
                 android:onClick="undo"/>
 
@@ -67,7 +67,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Pass"
+                android:text="@string/pass"
                 android:id="@+id/btn_pass"
                 android:onClick="pass"
                 />
@@ -76,7 +76,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Save"
+                android:text="@string/save"
                 android:id="@+id/button4"
                 android:onClick="save_SGF"
                 />
@@ -85,7 +85,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1.2"
                 android:layout_height="wrap_content"
-                android:text="Resign"
+                android:text="@string/resign"
                 android:id="@+id/btn_resign"
                 android:onClick="resign"/>
 
@@ -93,7 +93,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1.3"
                 android:layout_height="wrap_content"
-                android:text="Confirm"
+                android:text="@string/confirm"
                 android:id="@+id/btn_confirm"
                 android:visibility="visible"
                 android:onClick="confirm_result"/>

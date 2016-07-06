@@ -79,7 +79,7 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
                     /* pop-up wait dialog */
                     load_progress = new ProgressDialog(PlayRequestActivity.this);
                     load_progress.setCancelable(false);
-                    load_progress.setMessage("Waiting response ...");
+                    load_progress.setMessage(getString(R.string.waiting_response) + "...");
                     load_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
                     load_progress.setProgress(0);
                     load_progress.setMax(100);
@@ -97,8 +97,8 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
         /* rule */
         sp_rule = (Spinner) findViewById(R.id.sp_rule);
         List<String> rules = new ArrayList<String>();
-        rules.add("JAPANESE");
-        rules.add("CHINESE");
+        rules.add(getString(R.string.rule_japanese).toUpperCase());
+        rules.add(getString(R.string.rule_chinese).toUpperCase());
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, rules);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         sp_rule.setAdapter(adapter);
@@ -120,9 +120,9 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
         /* w/b : random, black, white */
         sp_wb = (Spinner) findViewById(R.id.sp_wb);
         List<String> wb_choose = new ArrayList<>();
-        wb_choose.add("Random");
-        wb_choose.add("Black");
-        wb_choose.add("White");
+        wb_choose.add(getString(R.string.random));
+        wb_choose.add(getString(R.string.black));
+        wb_choose.add(getString(R.string.white));
         ArrayAdapter<String> wb_choose_adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, wb_choose);
         wb_choose_adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
         sp_wb.setAdapter(wb_choose_adapter);
@@ -356,7 +356,9 @@ public class PlayRequestActivity extends AppCompatActivity implements GoMessageL
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         Integer value;
-        if (parent.equals(this.sp_rule)) {
+
+        /* Handicapped game normally has no komi */
+        if (parent.equals(this.sp_rule) && (Integer) this.sp_handicap.getSelectedItem() < 1) {
             if (position == 0) {
                 komi.setText("6.5");
             } else {

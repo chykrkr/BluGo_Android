@@ -69,9 +69,9 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
 
         builder = new AlertDialog.Builder(context);
         builder.setView(file_name_input)
-            .setTitle("Input save file name")
+            .setTitle(ResStrGenerator.getInstance().get_res_string(R.string.input_save_file_name))
             .setCancelable(false)
-            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     Message msg;
@@ -87,7 +87,7 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
                     GoActivityUtil.getInstance().get_go_msg_handler().sendMessage(msg);
                 }
             })
-            .setNegativeButton("CANCEL", null);
+            .setNegativeButton(android.R.string.cancel, null);
 
         AlertDialog alert = builder.create();
         alert.show();
@@ -140,7 +140,7 @@ public class GoActivityUtil implements Handler.Callback, GoMessageListener {
     {
         load_progress = new ProgressDialog(ctx);
         load_progress.setCancelable(true);
-        load_progress.setMessage("Loading SGF ...");
+        load_progress.setMessage(ctx.getString(R.string.loading_sgf));
         load_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         load_progress.setProgress(0);
         load_progress.setMax(100);

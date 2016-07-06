@@ -1,0 +1,94 @@
+<resources>
+    <string name="app_name">BluGo</string>
+    <string name="about">기타...</string>
+    <string name="title_activity_review_game">ReviewGameActivity</string>
+    <string name="review_game">복기</string>
+    <string name="single_game">혼자 두기</string>
+    <string name="enable_discover">검색 활성화</string>
+    <string name="wait_game_request">대국 접수</string>
+    <string name="request_game">대국 신청</string>
+    <string name="variation">놓아보기</string>
+    <string name="info">정보</string>
+    <string name="information">정보</string>
+    <string name="rule">규칙</string>
+    <string name="rule_japanese">일본</string>
+    <string name="rule_chinese">중국</string>
+    <string name="draw">무승부</string>
+    <string name="resign">불계</string>
+    <string name="undo">무르기</string>
+    <string name="pass">넘기기</string>
+    <string name="save">저장</string>
+    <string name="confirm">확인</string>
+    <string name="white_won_by">White won by</string>
+    <string name="fmt_white_won_by">백 %.1f 승</string>
+    <string name="fmt_black_won_by">흑 %.1f 승</string>
+    <string name="fmt_white_won_by_short">백+%.1f</string>
+    <string name="fmt_black_won_by_short">흑+%.1f</string>
+    <string name="fmt_white_won_by_2">백 %s 승</string>
+    <string name="fmt_black_won_by_2">흑 %s 승</string>
+    <string name="dead_black">흑 사석</string>
+    <string name="dead_white">백 사석</string>
+    <string name="dead_black_short">흑 사석</string>
+    <string name="dead_white_short">백 사석</string>
+    <string name="white_tr">백 집</string>
+    <string name="black_tr">흑 집</string>
+    <string name="white_tr_short">백 집</string>
+    <string name="black_tr_short">흑 집</string>
+    <string name="live_white">백(사석 제외)</string>
+    <string name="live_black">흑(사석 제외)</string>
+    <string name="komi">덤</string>
+    <string name="size">크기</string>
+    <string name="handicap">치석</string>
+    <string name="white_total">백(총합)</string>
+    <string name="black_total">흑(총합)</string>
+    <string name="result">결과</string>
+
+    <string name="white_won_by_resign_short">백불계승</string>
+    <string name="black_won_by_resign_short">흑불계승</string>
+
+    <string name="white_short">백</string>
+    <string name="black_short">흑</string>
+
+    <string name="white">백</string>
+    <string name="black">흑</string>
+    <string name="random">무작위</string>
+
+    <string name="game_setting">게임 설정</string>
+
+    <string name="waiting_request">대국 신청 대기중</string>
+    <string name="W_B_SHORT">흑/백</string>
+
+    <string name="discover_device">기기 찾기</string>
+
+    <string name="game_request_arrived">대국 신청이 왔습니다</string>
+
+    <string name="your_color">돌가림</string>
+
+    <string name="accept">수락</string>
+    <string name="reject">거절</string>
+
+    <string name="question_accept_result">결과를 수락하시겠습니까?</string>
+
+    <string name="your_turn_black">당신의 차례(흑)</string>
+    <string name="your_turn_white">당신의 차례(백)</string>
+
+    <string name="fmt_you_won_by">(%s) 불계승</string>
+
+    <string name="opponent_passed">상대가 차례를 넘겼습니다.</string>
+
+    <string name="opponent_confirmed_result">상대가 확인을 마쳤습니다..</string>
+    <string name="opponent_declined_result">상대가 결과를 거부했습니다.</string>
+    <string name="opponent_accepted_result">상대가 결과를 수락했습니다.</string>
+    <string name="game_finished">대국 종료</string>
+    <string name="refuse_undo_request_permanently">이후의 무르기 요청을 자동으로 거절</string>
+    <string name="your_undo_request_was_rejected">상대가 무르기 요청을 거절했습니다.</string>
+    <string name="question_undo_request_accept_it">무르기 요청이 왔습니다. 승락하시겠습니까?</string>
+
+    <string name="input_save_file_name">저장 파일명을 입력하세요</string>
+
+    <string name="reset">기본설정</string>
+
+    <string name="loading_sgf">SGF 파일 로딩중</string>
+    <string name="waiting_response">수락 대기중</string>
+
+</resources>
