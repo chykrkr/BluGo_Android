@@ -597,6 +597,8 @@ public class GoControlSingle extends GoControl {
         String result = null;
         String result_convert;
 
+	ResStrGenerator generator = ResStrGenerator.getInstance();
+
         if (this.determined_result == null)
             return "";
 
@@ -604,23 +606,23 @@ public class GoControlSingle extends GoControl {
             return "";
 
         if (determined_result[0] == null) {
-            return "Draw";
+            return generator.get_res_string(R.string.draw);
         }
 
         switch ((Player) determined_result[0]) {
             case BLACK:
-                result = ResStrGenerator.getInstance().get_res_string(R.string.fmt_black_won_by_2);
+                result = generator.get_res_string(R.string.fmt_black_won_by_2);
                 break;
 
             case WHITE:
-                result = ResStrGenerator.getInstance().get_res_string(R.string.fmt_white_won_by_2);
+                result = generator.get_res_string(R.string.fmt_white_won_by_2);
                 break;
         }
 
         result_convert = (String) determined_result[1];
 
         if (result_convert.compareToIgnoreCase("r") == 0) {
-            result_convert = "resign";
+            result_convert = generator.get_res_string(R.string.resign);
         }
 
 	result = String.format(result, result_convert);
