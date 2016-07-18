@@ -92,10 +92,14 @@ public class FrontDoorActivity extends AppCompatActivity implements FileChooser.
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent;
+
         switch (item.getItemId()) {
             case R.id.action_about:
                 // User chose the "Settings" item, show the app settings UI...
-                Toast.makeText(this, "menu test ...", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "menu test ...", Toast.LENGTH_SHORT).show();
+                intent = new Intent(this, AboutActivity.class);
+                startActivity(intent);
                 return true;
 
             default:

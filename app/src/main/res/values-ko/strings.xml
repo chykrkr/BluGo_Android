@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">BluGo</string>
-    <string name="about">기타...</string>
+    <string name="about">정보</string>
     <string name="title_activity_review_game">ReviewGameActivity</string>
     <string name="review_game">복기</string>
     <string name="single_game">혼자 두기</string>
@@ -91,4 +91,33 @@
     <string name="loading_sgf">SGF 파일 로딩중</string>
     <string name="waiting_response">수락 대기중</string>
 
+    <string name="about_license">
+        BluGo는 BSD 라이센스를 따르는 오픈소스 프로그램입니다.
+        소스 코드는 아래 링크에서 다운로드 가능합니다.\n
+        <a>https://github.com/chykrkr/BluGo_Android</a>.\n\n
+
+        Copyright (c) 2016 chykrkr@gmail.com.\n
+        All rights reserved.\n\n
+
+        다음의 조건들을 충족시키는 한, 소스 형식과 바이너리 형식을 통한 재배포와 사용은 수정 여부에
+        관계없이 허용된다.\n\n
+
+        \t소스 코드의 재배포는 위의 저작권 표시와 여기 나열된 조건들, 그리고 아래의 보증 부인 고지를
+        포함해야 한다.\n\n
+
+        \t바이너리 형식으로 재배포 할 때는 위의 저작권 표시와 여기 나열된 조건들 그리고 아래의 보증
+        부인 고지를 배포할 때 제공되는 문서 및 기타 자료에 포함해야 한다.\n\n
+
+        \t사전에 서면으로 허가를 받지 않는 한, BluGo의 이름이나 기여자의 이름이 본 소프트웨어에서
+        추출한 제품을 보증하거나 홍보하는데 사용되어서는 안 된다.\n\n
+
+        저작권자와 기여자는 이 소프트웨어를 "있는 그대로의" 상태로 제공하며, 상품성 여부나 특정한
+        목적에 대한 적합성에 대한 묵시적 보증을 포함한 어떠한 형태의 보증도 명시적이나 묵시적으로
+        제공되지 않는다.  손해 가능성을 사전에 알고 있었다 하더라도, 저작권자나 기여자는 어떠한
+        경우에도 이 소프트웨어의 사용으로 인하여 발생한, 직접적이거나 간접적인 손해, 우발적이거나
+        결과적 손해, 특수하거나 일반적인 손해에 대하여, 그 발생의 원인이나 책임론, 계약이나
+        무과실책임이나 불법행위(과실 등을 포함)와 관계 없이 책임을 지지 않는다.
+        이러한 조건은 대체 재화나 용역의 구입 및 유용성이나 데이터, 이익의 손실, 그리고 영업 방해
+        등을 포함하나 이에 국한되지는 않는다.
+    </string>
 </resources>
